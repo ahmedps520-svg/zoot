@@ -1,0 +1,22 @@
+<meta name="theme-color" content="#0D0D0D">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta property="og:site_name" content="ZOOOT — زوووط">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_SA">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:image" content="og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  /* Set language & motion flags before first paint to avoid a flash of the wrong direction. */
+  (function () {
+    var d = document.documentElement;
+    try { if (localStorage.getItem('zooot-lang') === 'en') { d.lang = 'en'; d.dir = 'ltr'; } } catch (e) {}
+    d.classList.add('js');
+    try { if (!sessionStorage.getItem('zooot-intro')) d.classList.add('is-loading'); } catch (e) {}
+  })();
+</script>

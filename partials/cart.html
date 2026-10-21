@@ -1,0 +1,89 @@
+<div class="drawer" data-cart-drawer hidden>
+  <div class="drawer-scrim" data-cart-close></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="cart-title" tabindex="-1">
+    <header class="drawer-head">
+      <h2 id="cart-title" class="h3"><span data-en="Your bag">سلّتك</span> <sup data-cart-count>0</sup></h2>
+      <button class="icon-btn" type="button" data-cart-close aria-label="إغلاق" data-en-aria-label="Close"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+    </header>
+    <div class="drawer-perk">
+      <svg aria-hidden="true"><use href="#i-crown"/></svg>
+      <p data-en="Every order ships in the black signature box — with a little surprise inside.">كل طلب يوصلك في صندوق التوقيع الأسود — ومعه مفاجأة صغيرة داخل العلبة.</p>
+    </div>
+    <div class="drawer-body" data-cart-lines></div>
+    <footer class="drawer-foot" data-cart-foot>
+      <div class="drawer-total">
+        <span data-en="Subtotal">المجموع</span>
+        <strong data-cart-subtotal>0</strong>
+      </div>
+      <p class="drawer-fine" data-en="Shipping is calculated at checkout.">الشحن يُحسب عند إتمام الطلب.</p>
+      <button class="btn btn--block" type="button" data-checkout-open data-magnetic><span data-en="Checkout">أكمل الطلب</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+    </footer>
+  </aside>
+</div>
+
+<dialog class="modal checkout" data-checkout aria-labelledby="checkout-title">
+  <button class="icon-btn modal-close" type="button" data-checkout-close aria-label="إغلاق" data-en-aria-label="Close"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+  <div class="checkout-step" data-step="form">
+    <p class="kicker">CHECKOUT · DROP 001</p>
+    <h2 id="checkout-title" class="h2" data-en="Almost ZOOOT.">باقي خطوة<br>وتصير زوووط.</h2>
+    <form class="checkout-form" data-checkout-form novalidate>
+      <div class="field">
+        <label for="co-name" data-en="Full name">الاسم الكامل</label>
+        <input id="co-name" name="name" autocomplete="name" required minlength="2">
+      </div>
+      <div class="field">
+        <label for="co-phone" data-en="Mobile">رقم الجوال</label>
+        <input id="co-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="^\+?[0-9\s]{9,15}$" placeholder="05X XXX XXXX" dir="ltr">
+      </div>
+      <div class="field">
+        <label for="co-email" data-en="Email (optional)">البريد (اختياري)</label>
+        <input id="co-email" name="email" type="email" autocomplete="email" dir="ltr">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="co-city" data-en="City">المدينة</label>
+          <input id="co-city" name="city" autocomplete="address-level2" required>
+        </div>
+        <div class="field">
+          <label for="co-district" data-en="District">الحي</label>
+          <input id="co-district" name="district" autocomplete="address-level3">
+        </div>
+      </div>
+      <div class="field">
+        <label for="co-address" data-en="Address details">العنوان بالتفصيل</label>
+        <textarea id="co-address" name="address" rows="2" required></textarea>
+      </div>
+      <div class="checkout-summary" data-checkout-summary></div>
+      <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
+      <button class="btn btn--block" type="submit" data-magnetic><span data-en="Place order">ثبّت الطلب</span><svg aria-hidden="true"><use href="#i-check"/></svg></button>
+    </form>
+  </div>
+
+  <div class="checkout-step checkout-done" data-step="done" hidden>
+    <p class="kicker">THANK YOU · DROP 001</p>
+    <h2 class="h2" data-en="Thanks for choosing ZOOOT">شكرًا لأنك اخترت زوووط</h2>
+    <p class="lead"><span data-en="Order N°">رقم الطلب</span> <strong class="order-no" data-order-no></strong></p>
+    <button class="flip-card flip-card--sm" type="button" data-flip aria-pressed="false" aria-label="اقلب البطاقة" data-en-aria-label="Flip the card">
+      <span class="flip-inner">
+        <span class="flip-face flip-front">
+          <svg class="flip-crown" aria-hidden="true"><use href="#i-crown"/></svg>
+          <span class="flip-q" data-en="Who's behind<br>the ZOOOTA?">تدري مين<br>وراء الزوووطة؟</span>
+          <span class="flip-hint">THE SECRET BEHIND ZOOOT</span>
+        </span>
+        <span class="flip-face flip-back">
+          <img src="img/brand/founders.webp" alt="شذى وسارة — وراء الزوووطة" data-en-alt="Shatha &amp; Sarah — behind the ZOOOTA" width="1200" height="716" loading="lazy">
+          <span class="flip-names" data-en="Shatha &amp; Sarah Alghamdi">شذى وسارة الغامدي</span>
+          <span class="flip-drop">DROP 001</span>
+        </span>
+      </span>
+    </button>
+    <p class="checkout-next" data-checkout-next></p>
+    <div class="checkout-done-actions">
+      <a class="btn btn--whatsapp" data-whatsapp-link href="#" target="_blank" rel="noopener" hidden><svg aria-hidden="true"><use href="#i-whatsapp"/></svg><span data-en="Confirm on WhatsApp">أكّد عبر واتساب</span></a>
+      <button class="btn btn--ghost" type="button" data-checkout-close><span data-en="Keep browsing">كمّل تصفّح</span></button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toasts" data-toasts aria-live="polite" aria-atomic="false"></div>
+<div class="page-wipe" data-wipe aria-hidden="true"><svg><use href="#zooot-logo"/></svg></div>

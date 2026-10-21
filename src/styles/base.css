@@ -1,0 +1,387 @@
+/* ==========================================================================
+   ZOOOT — tokens & base
+   Colours, fonts and rules come straight from the Issue 01 colour system (p.53).
+   ========================================================================== */
+:root {
+  --yellow: #ffd21f;
+  --blue: #1f4bff;
+  --magenta: #e5197f;
+  --ink: #0d0d0d;
+  --orange: #f26b21;
+  --purple: #4b1e8c;
+  --gold: #c9a04a;
+  --cyan: #22d3ee;
+  --cream: #f2ebdf;
+  --cream-2: #e8dcc4;
+  --paper: #fbf8f2;
+  --white: #fff;
+  --muted: #6e665b;
+  --muted-dark: #9a9387;
+  --line: rgb(13 13 13 / 0.14);
+  --line-light: rgb(242 235 223 / 0.16);
+
+  --bg: var(--cream);
+  --fg: var(--ink);
+
+  --f-display: 'Lalezar', 'Kufam Variable', system-ui, sans-serif;
+  --f-head: 'Kufam Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --f-body: 'IBM Plex Sans Arabic', 'Archivo Variable', system-ui, sans-serif;
+  --f-latin: 'Archivo Variable', 'Archivo Black', system-ui, sans-serif;
+  --f-latin-black: 'Archivo Black', 'Archivo Variable', system-ui, sans-serif;
+
+  --gutter: clamp(16px, 4vw, 56px);
+  --maxw: 1440px;
+  --radius: 18px;
+  --radius-sm: 10px;
+  --radius-lg: 28px;
+  --header-h: 76px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --shadow-pop: 5px 5px 0 var(--ink);
+  --shadow-soft: 0 30px 60px -30px rgb(13 13 13 / 0.45);
+}
+
+html[lang='en'] {
+  --f-head: 'Archivo Black', 'Archivo Variable', system-ui, sans-serif;
+  --f-display: 'Archivo Black', 'Archivo Variable', system-ui, sans-serif;
+  --f-body: 'Archivo Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 12px);
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--f-body);
+  font-size: clamp(15px, 0.35vw + 14px, 17px);
+  line-height: 1.75;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+html[lang='en'] body {
+  line-height: 1.6;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+img {
+  height: auto;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  inset-inline-start: 16px;
+  top: 12px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-weight: 700;
+  border-radius: 999px;
+  transform: translateY(-160%);
+  transition: transform 0.3s var(--ease);
+}
+.skip-link:focus {
+  transform: none;
+}
+
+/* Film grain over everything — subtle print feel. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  z-index: 150;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------------ layout */
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  position: relative;
+  padding-block: clamp(80px, 11vw, 168px);
+}
+
+.theme-dark {
+  --bg: var(--ink);
+  --fg: var(--cream);
+  --muted: var(--muted-dark);
+  --line: var(--line-light);
+  background: var(--bg);
+  color: var(--fg);
+}
+.theme-cream {
+  --bg: var(--cream);
+  --fg: var(--ink);
+  background: var(--bg);
+  color: var(--fg);
+}
+.theme-paper {
+  --bg: var(--paper);
+  background: var(--bg);
+  color: var(--fg);
+}
+.theme-yellow {
+  --bg: var(--yellow);
+  --fg: var(--ink);
+  --muted: #6b5a12;
+  background: var(--bg);
+  color: var(--fg);
+}
+.theme-blue {
+  --bg: var(--blue);
+  --fg: var(--white);
+  --muted: #c8d3ff;
+  --line: rgb(255 255 255 / 0.22);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ------------------------------------------------------------- typography */
+.kicker {
+  font-family: var(--f-latin);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(10.5px, 0.2vw + 10px, 12.5px);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--magenta);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.theme-dark .kicker,
+.kicker--yellow {
+  color: var(--yellow);
+}
+.kicker--ink,
+.theme-yellow .kicker {
+  color: var(--ink);
+}
+.theme-blue .kicker,
+.kicker--light {
+  color: var(--white);
+}
+[dir='rtl'] .kicker {
+  text-align: right;
+}
+
+.h-display {
+  font-family: var(--f-display);
+  font-weight: 400;
+  line-height: 0.95;
+  font-size: clamp(64px, 13vw, 220px);
+  letter-spacing: -0.01em;
+}
+
+.h1,
+.h2,
+.h3 {
+  font-family: var(--f-head);
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.h1 {
+  font-size: clamp(44px, 6.6vw, 112px);
+  line-height: 1.04;
+}
+.h2 {
+  font-size: clamp(34px, 4.6vw, 76px);
+}
+.h3 {
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.25;
+}
+html[lang='en'] .h1,
+html[lang='en'] .h2,
+html[lang='en'] .h3 {
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+html[lang='en'] .h3 {
+  line-height: 1.1;
+}
+
+.lead {
+  font-size: clamp(17px, 0.6vw + 14px, 21px);
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--fg) 78%, transparent);
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
+.hl {
+  color: var(--yellow);
+}
+.hl-m {
+  color: var(--magenta);
+}
+.hl-b {
+  color: var(--blue);
+}
+
+/* Layered pop text — fill, ink outline, magenta drop (campaign p.61) */
+.pop-text {
+  --o: 0.045em;
+  --s1: var(--magenta);
+  --s2: var(--ink);
+  color: var(--white);
+  text-shadow:
+    calc(var(--o) * -1) calc(var(--o) * -1) 0 var(--ink),
+    var(--o) calc(var(--o) * -1) 0 var(--ink),
+    calc(var(--o) * -1) var(--o) 0 var(--ink),
+    var(--o) var(--o) 0 var(--ink),
+    0 calc(var(--o) * -1) 0 var(--ink),
+    0 var(--o) 0 var(--ink),
+    calc(var(--o) * -1) 0 0 var(--ink),
+    var(--o) 0 0 var(--ink),
+    0.07em 0.07em 0 var(--s1),
+    0.11em 0.11em 0 var(--s2);
+}
+.pop-text--yellow {
+  color: var(--yellow);
+  --s1: var(--magenta);
+  --s2: var(--blue);
+}
+
+.outline-num {
+  font-family: var(--f-latin-black);
+  color: transparent;
+  -webkit-text-stroke: 2px var(--stroke, var(--fg));
+  line-height: 0.9;
+}
+
+.num {
+  font-family: var(--f-latin-black);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* RTL-aware arrow icons */
+[dir='ltr'] .flip-x,
+[dir='ltr'] svg:has(> use[href='#i-arrow']) {
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------ reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

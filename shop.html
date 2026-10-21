@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>المتجر — زوووط ZOOOT · DROP 001</title>
+  <meta name="description" content="تسوّق DROP 001 من زوووط: 8 أطقم هودي وشروال، 6 هوديز بعبارات، و6 شراويل بألوان «زوووط».">
+  <meta property="og:title" content="المتجر — زوووط ZOOOT · DROP 001">
+  <meta property="og:description" content="8 أطقم، 6 عبارات، 6 شراويل. كل قطعة تبدأ من الظهر.">
+  <!-- @include head.html -->
+</head>
+<body data-page="shop" data-title-en="Shop — ZOOOT · DROP 001">
+  <!-- @include sprite-logo.html -->
+  <!-- @include sprite-icons.html -->
+  <!-- @include loader.html -->
+  <!-- @include header.html -->
+
+  <main id="main">
+    <section class="shop-hero theme-dark">
+      <div class="shop-hero-dots" aria-hidden="true"></div>
+      <div class="container shop-hero-inner">
+        <div>
+          <p class="kicker" data-reveal>SHOP · DROP 001</p>
+          <h1 class="shop-title" data-split data-en="The shop">المتجر</h1>
+        </div>
+        <p class="lead" data-reveal data-en="8 look sets, 6 statement hoodies and 6 sirwals in the «ZOOOT» colourways. Every piece starts from the back.">8 أطقم، 6 هوديز بعبارات، و6 شراويل بألوان «زوووط». كل قطعة تبدأ من الظهر.</p>
+        <p class="shop-big num outline-num" aria-hidden="true">001</p>
+      </div>
+    </section>
+
+    <div class="shop-bar" data-shop-bar>
+      <div class="container shop-bar-inner">
+        <div class="opt-group" role="radiogroup" aria-label="تصفية القطع" data-en-aria-label="Filter pieces" data-filters>
+          <button class="opt" type="button" role="radio" aria-checked="true" data-filter="all"><span data-en="All">الكل</span> <small class="num" data-count-for="all"></small></button>
+          <button class="opt" type="button" role="radio" aria-checked="false" data-filter="set"><span data-en="Look sets">الأطقم</span> <small class="num" data-count-for="set"></small></button>
+          <button class="opt" type="button" role="radio" aria-checked="false" data-filter="hoodie"><span data-en="Hoodies">الهوديز</span> <small class="num" data-count-for="hoodie"></small></button>
+          <button class="opt" type="button" role="radio" aria-checked="false" data-filter="sirwal"><span data-en="Sirwals">الشراويل</span> <small class="num" data-count-for="sirwal"></small></button>
+        </div>
+        <div class="shop-tools">
+          <p class="shop-count" aria-live="polite"><b class="num" data-result-count>20</b> <span data-en="pieces">قطعة</span></p>
+          <label class="sr-only" for="shop-sort" data-en="Sort">ترتيب</label>
+          <select class="select" id="shop-sort" data-sort>
+            <option value="featured" data-en="Featured">المقترح</option>
+            <option value="price-asc" data-en="Price: low to high">السعر: الأقل أولًا</option>
+            <option value="price-desc" data-en="Price: high to low">السعر: الأعلى أولًا</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <section class="shop-body theme-cream">
+      <div class="container">
+        <div class="shop-grid" data-grid></div>
+      </div>
+    </section>
+
+    <div class="tape-x tape-x--single" aria-hidden="true">
+      <div class="tape tape--yellow marquee" style="--speed: 36s">
+        <div class="marquee-track"><span class="marquee-item">كل قطعة تبدأ من الظهر <svg><use href="#i-star"/></svg></span><span class="marquee-item">EVERY PIECE STARTS FROM THE BACK <svg><use href="#i-star"/></svg></span></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- @include footer.html -->
+  <!-- @include cart.html -->
+  <script type="module" src="/src/js/pages/shop.js"></script>
+</body>
+</html>

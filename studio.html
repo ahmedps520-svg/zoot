@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>صمّم إطلالتك — استوديو زوووط ZOOOT</title>
+  <meta name="description" content="استوديو زوووط: اختر لون الهودي، العبارة، قماش الشروال ولون «زوووط» — وشوف طقمك حيّ قبل ما تطلبه.">
+  <meta property="og:title" content="صمّم إطلالتك — استوديو زوووط">
+  <meta property="og:description" content="لون الهودي × العبارة × قماش السوق × لون «زوووط». أكثر من 2,300 طقم.">
+  <!-- @include head.html -->
+</head>
+<body data-page="studio" data-title-en="Build your look — ZOOOT Studio">
+  <!-- @include sprite-logo.html -->
+  <!-- @include sprite-icons.html -->
+  <!-- @include loader.html -->
+  <!-- @include header.html -->
+
+  <main id="main" class="studio theme-cream">
+    <div class="container studio-head">
+      <div>
+        <p class="kicker">ZOOOT STUDIO · DROP 001</p>
+        <h1 class="h1" data-split data-en="Build your look">صمّم إطلالتك</h1>
+      </div>
+      <p class="lead" data-en="Pick the hoodie colour, the statement, the souq fabric and the colour of the big «ZOOOT». Your set renders live — then it’s yours.">اختر لون الهودي، العبارة، قماش السوق، ولون «زوووط» الكبيرة. طقمك يتشكّل قدامك — وبعدها هو لك.</p>
+    </div>
+
+    <div class="container studio-grid">
+      <div class="studio-stage-wrap">
+        <div class="studio-stage" data-stage data-view="full">
+          <div class="stage-burst" aria-hidden="true"></div>
+          <div class="stage-outfit"><div data-outfit></div></div>
+          <div class="stage-views" role="tablist" aria-label="زاوية العرض" data-en-aria-label="View">
+            <button type="button" role="tab" aria-selected="true" data-view-btn="full"><span data-en="Full set">الطقم</span></button>
+            <button type="button" role="tab" aria-selected="false" data-view-btn="hoodie"><span data-en="Hoodie">الهودي</span></button>
+            <button type="button" role="tab" aria-selected="false" data-view-btn="sirwal"><span data-en="Sirwal">الشروال</span></button>
+          </div>
+          <div class="stage-tools">
+            <button class="icon-btn" type="button" data-random aria-label="طقم عشوائي" data-en-aria-label="Random set" data-cursor="زوووطني" data-cursor-en="ROLL"><svg aria-hidden="true"><use href="#i-dice"/></svg></button>
+            <button class="icon-btn" type="button" data-share aria-label="شارك التصميم" data-en-aria-label="Share your build"><svg aria-hidden="true"><use href="#i-share"/></svg></button>
+          </div>
+          <p class="stage-note" data-en="Digital preview — colours are approximate">معاينة رقمية — الألوان تقريبية</p>
+        </div>
+      </div>
+
+      <div class="studio-panel">
+        <section class="step" aria-labelledby="step-0">
+          <h2 class="step-title" id="step-0"><span class="num">00</span> <span data-en="Start from a look">ابدأ من إطلالة</span></h2>
+          <div class="presets" data-presets></div>
+        </section>
+        <section class="step" aria-labelledby="step-1">
+          <h2 class="step-title" id="step-1"><span class="num">01</span> <span data-en="Hoodie colour">لون الهودي</span> <b data-label="hoodie"></b></h2>
+          <div class="opt-group" role="radiogroup" aria-labelledby="step-1" data-group="hoodie"></div>
+        </section>
+        <section class="step" aria-labelledby="step-2">
+          <h2 class="step-title" id="step-2"><span class="num">02</span> <span data-en="The statement">العبارة</span> <b data-label="statement"></b></h2>
+          <div class="st-tiles" role="radiogroup" aria-labelledby="step-2" data-group="statement"></div>
+        </section>
+        <section class="step" aria-labelledby="step-3">
+          <h2 class="step-title" id="step-3"><span class="num">03</span> <span data-en="Sirwal fabric">قماش الشروال</span> <b data-label="fabric"></b></h2>
+          <div class="fab-tiles" role="radiogroup" aria-labelledby="step-3" data-group="fabric"></div>
+        </section>
+        <section class="step" aria-labelledby="step-4">
+          <h2 class="step-title" id="step-4"><span class="num">04</span> <span data-en="«ZOOOT» colourway">لون «زوووط»</span> <b data-label="colorway"></b></h2>
+          <div class="cw-tiles" role="radiogroup" aria-labelledby="step-4" data-group="colorway"></div>
+        </section>
+        <section class="step" aria-labelledby="step-5">
+          <h2 class="step-title" id="step-5"><span class="num">05</span> <span data-en="Sizes">المقاسات</span></h2>
+          <div class="size-rows">
+            <div><p class="size-label" data-en="Hoodie">الهودي</p><div class="opt-group" role="radiogroup" aria-label="مقاس الهودي" data-en-aria-label="Hoodie size" data-group="sizeH"></div></div>
+            <div><p class="size-label" data-en="Sirwal">الشروال</p><div class="opt-group" role="radiogroup" aria-label="مقاس الشروال" data-en-aria-label="Sirwal size" data-group="sizeS"></div></div>
+          </div>
+        </section>
+
+        <section class="summary" aria-labelledby="sum-title">
+          <h2 class="h3" id="sum-title" data-en="Your ZOOOT">زوووطتك</h2>
+          <dl class="summary-list" data-summary></dl>
+          <div class="summary-foot">
+            <p class="summary-price num" data-price></p>
+            <button class="btn" type="button" data-add data-magnetic="0.2"><svg aria-hidden="true"><use href="#i-bag"/></svg><span data-en="Add the set to bag">أضف الطقم للسلة</span></button>
+          </div>
+          <p class="summary-fine" data-en="Each set is made to order from DROP 001 pieces. Final materials are confirmed with supplier samples.">كل طقم يُجهَّز من قطع DROP 001. الخامات النهائية تُعتمد بعيّنات المورّد.</p>
+        </section>
+      </div>
+    </div>
+
+    <div class="studio-bar" data-studio-bar>
+      <span class="num" data-price-bar></span>
+      <button class="btn btn--sm" type="button" data-add><span data-en="Add to bag">أضف للسلة</span></button>
+    </div>
+  </main>
+
+  <!-- @include footer.html -->
+  <!-- @include cart.html -->
+  <script type="module" src="/src/js/pages/studio.js"></script>
+</body>
+</html>
