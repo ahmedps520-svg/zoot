@@ -293,3 +293,83 @@ html[lang='en'] .track-status span {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* ------------------------------------------------------------------ courier */
+.track-driver {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--white);
+  border: 2px solid var(--ink);
+}
+.td-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.td-head small {
+  display: block;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.td-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+  font-weight: 900;
+  font-size: 20px;
+}
+.td-map {
+  height: 240px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--line);
+  background: var(--cream-2);
+  z-index: 0;
+}
+.td-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #10603a;
+}
+.td-live i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: track-pulse 1.8s infinite;
+}
+.td-eta {
+  font-size: 15px;
+}
+.td-eta b {
+  font-family: var(--f-latin);
+  font-size: 20px;
+}
+.td-eta span {
+  color: var(--muted);
+}
+.courier-pin {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--ink);
+}
+.courier-pin svg {
+  width: 26px;
+  height: 26px;
+}

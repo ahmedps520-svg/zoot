@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ZOOOT Delivery — تطبيق المندوب</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#1F4BFF">
+  <meta name="color-scheme" content="light">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ZOOOT Delivery">
+  <script>
+    (function () {
+      try { if (localStorage.getItem('zooot-hq-lang') === 'en') { document.documentElement.lang = 'en'; document.documentElement.dir = 'ltr'; } } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="admin courier">
+  <!-- @include sprite-logo.html -->
+  <!-- @include sprite-admin.html -->
+
+  <div id="root" class="loading" aria-busy="true"><svg aria-hidden="true"><use href="#zooot-logo"/></svg></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script type="module" src="/src/courier/main.js"></script>
+</body>
+</html>

@@ -34,6 +34,7 @@ export default defineConfig({
       input: {
         ...Object.fromEntries(pages.map((p) => [p, resolve(root, `${p}.html`)])),
         admin: resolve(root, 'admin/index.html'),
+        courier: resolve(root, 'courier/index.html'),
       },
     },
   },

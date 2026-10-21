@@ -115,6 +115,26 @@ function timelineHTML(o) {
     .join('')}</div>`;
 }
 
+/** ISO → value for <input type="datetime-local"> in local time. */
+const localInput = (iso) => (iso ? new Date(Date.parse(iso) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
+
+/** Where the assigned driver is (last ping) and what the customer shared. */
+function driverLine(o) {
+  if (!o.courier_id && !o.delivery_location) return '';
+  const c = store.couriers.find((x) => x.id === o.courier_id);
+  const l = c?.location;
+  const fresh = l && Date.now() - Date.parse(l.updated_at) < 10 * 60000;
+  return `<div class="mode-note" style="margin-bottom:12px;background:${fresh ? '#dff3e7' : '#f4f0e8'};border-color:${fresh ? '#9fd6b5' : 'var(--line)'}">${icon('truck')}<span>${
+    c
+      ? `<strong>${esc(c.name || c.email)}</strong>${c.phone ? ` · <a href="tel:${esc(c.phone)}" dir="ltr">${esc(c.phone)}</a>` : ''}<br>${
+          l
+            ? `${esc(fresh ? L('يشارك موقعه الحين', 'Sharing live location') : L('آخر موقع', 'Last location'))} · ${esc(dateTime(l.updated_at))} · <a href="https://www.google.com/maps?q=${l.lat},${l.lng}" target="_blank" rel="noopener">${esc(L('على الخريطة', 'Map'))}</a>`
+            : esc(L('ما شارك موقعه للحين — العميل يشوف الوقت المتوقع', 'No location yet — the customer sees the ETA'))
+        }`
+      : ''
+  }${o.delivery_location ? `<br>${esc(L('موقع العميل', 'Customer location'))}: ${/^https?:/.test(o.delivery_location) ? `<a href="${esc(o.delivery_location)}" target="_blank" rel="noopener">${esc(o.delivery_location)}</a>` : esc(o.delivery_location)}` : ''}</span></div>`;
+}
+
 function invoiceHTML(o) {
   const s = store.settings.public || {};
   return `<div class="inv-head"><svg aria-hidden="true"><use href="#zooot-logo"/></svg><div style="text-align:end"><h1 style="font-size:20pt">${esc(L('فاتورة', 'Invoice'))}</h1><div dir="ltr">${esc(o.order_no)}</div><div>${esc(date(o.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</div></div></div>
@@ -260,6 +280,14 @@ function paint(host, o) {
 
         <section class="card">
           <div class="card-h"><h2>${esc(L('الشحن', 'Shipping'))}</h2>${o.tracking_no ? `<a class="b b-sm b-wa" href="${esc(waHref(o.customer_phone, waText(o, 'shipped')))}" target="_blank" rel="noopener">${icon('wa')}${esc(L('أرسل التتبّع', 'Send tracking'))}</a>` : ''}</div>
+          <div class="grid-2" style="margin-bottom:12px">
+            <label class="f"><span>${esc(L('المندوب (توصيل زوووط)', 'Driver (ZOOOT delivery)'))}</span><select data-field="courier_id"><option value="">${esc(L('— بدون —', '— none —'))}</option>${store.couriers
+              .filter((c) => c.active || c.id === o.courier_id)
+              .map((c) => `<option value="${esc(c.id)}" ${c.id === o.courier_id ? 'selected' : ''}>${esc(c.name || c.email)}</option>`)
+              .join('')}</select></label>
+            <label class="f"><span>${esc(L('الوصول المتوقع', 'Expected arrival'))}</span><input type="datetime-local" data-field="delivery_eta" value="${esc(localInput(o.delivery_eta))}"></label>
+          </div>
+          ${driverLine(o)}
           <div class="grid-2">
             <label class="f"><span>${esc(L('شركة الشحن', 'Courier'))}</span><select data-field="courier"><option value="">—</option>${COURIERS.map((c) => `<option ${c === o.courier ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
             <label class="f"><span>${esc(L('رقم الشحنة', 'Tracking no.'))}</span><input data-field="tracking_no" value="${esc(o.tracking_no || '')}" dir="ltr" autocomplete="off"></label>
@@ -485,7 +513,8 @@ function bind(el, o) {
     if (t.matches('[data-qty]')) return apply(() => api().items.update(o.id, t.dataset.qty, { qty: Number(t.value) }, actor()));
     if (t.matches('[data-field]')) {
       const k = t.dataset.field;
-      const v = ['discount', 'shipping'].includes(k) ? Math.max(0, Number(t.value) || 0) : t.value.trim();
+      let v = ['discount', 'shipping'].includes(k) ? Math.max(0, Number(t.value) || 0) : t.value.trim();
+      if (k === 'delivery_eta' && v) v = new Date(v).toISOString();
       if ((o[k] ?? '') === v || (o[k] == null && v === '')) return;
       return apply(() => api().orders.update(o.id, { [k]: v }, actor()), L('انحفظ', 'Saved'));
     }

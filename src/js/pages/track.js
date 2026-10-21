@@ -25,6 +25,59 @@ const COPY = {
 let current = null; // { no, phone, data }
 let timer = null;
 let stopLive = null;
+let map = null; // { el, map, marker, ring } — survives re-renders so the map doesn't flicker
+
+const clock = (iso) => new Intl.DateTimeFormat(getLang() === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn-ca-gregory', { hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+const ago = (iso) => {
+  const s = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+  if (s < 60) return L(`قبل ${s} ثانية`, `${s}s ago`);
+  return L(`قبل ${Math.round(s / 60)} دقيقة`, `${Math.round(s / 60)} min ago`);
+};
+
+/** Courier card: live map when the phone shared a fresh position, otherwise the ETA. */
+function driverHTML(d) {
+  if (!d) return '';
+  const mins = d.eta ? Math.round((Date.parse(d.eta) - Date.now()) / 60000) : null;
+  const eta = d.eta
+    ? `<p class="td-eta">${esc(L('الوصول المتوقع', 'Expected around'))} <b>${esc(clock(d.eta))}</b>${
+        mins > 1 ? ` <span>(${esc(L(`بعد ~${mins} دقيقة`, `in ~${mins} min`))})</span>` : mins !== null && mins <= 1 ? ` <span>(${esc(L('أي لحظة', 'any minute'))})</span>` : ''
+      }</p>`
+    : `<p class="td-eta">${esc(L('في الطريق إليك اليوم', 'On its way to you today'))}</p>`;
+  return `<div class="track-driver">
+    <div class="td-head">
+      <span class="td-avatar" aria-hidden="true">${esc((d.name || 'Z').trim().charAt(0))}</span>
+      <div><b>${esc(d.name || L('مندوب زوووط', 'ZOOOT courier'))}</b><small>${esc(L('مندوبك من زوووط', 'Your ZOOOT courier'))}</small></div>
+      ${d.phone ? `<a class="btn btn--sm btn--ghost" href="tel:${esc(d.phone)}">${esc(L('اتصال', 'Call'))}</a>` : ''}
+    </div>
+    ${d.location ? `<div class="td-map" data-map dir="ltr"></div><p class="td-live"><i></i>${esc(L('موقع المندوب مباشر', 'Live courier location'))} · ${esc(ago(d.location.at))}</p>` : ''}
+    ${eta}
+  </div>`;
+}
+
+const PIN = `<span class="courier-pin"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.5v2.5h-7z"/><circle cx="6.5" cy="17" r="1.8" fill="#FFD21F" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="17" r="1.8" fill="#FFD21F" stroke="currentColor" stroke-width="2"/></svg></span>`;
+
+async function paintMap(host, d) {
+  const slot = host.querySelector('[data-map]');
+  if (!slot || !d?.location) {
+    map = null;
+    return;
+  }
+  const { lat, lng, accuracy } = d.location;
+  if (map) {
+    slot.replaceWith(map.el);
+    map.map.invalidateSize();
+    map.marker.setLatLng([lat, lng]);
+    map.ring.setLatLng([lat, lng]).setRadius(Math.min(accuracy || 30, 300));
+    if (!map.map.getBounds().pad(-0.2).contains([lat, lng])) map.map.panTo([lat, lng], { animate: !reduceMotion });
+    return;
+  }
+  const [{ default: Lf }] = await Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]);
+  const m = Lf.map(slot, { zoomControl: false, attributionControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+  Lf.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(m);
+  const ring = Lf.circle([lat, lng], { radius: Math.min(accuracy || 30, 300), color: '#1F4BFF', weight: 1, fillOpacity: 0.12 }).addTo(m);
+  const marker = Lf.marker([lat, lng], { icon: Lf.divIcon({ className: '', html: PIN, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: false }).addTo(m);
+  map = { el: slot, map: m, marker, ring };
+}
 
 function render(o) {
   const host = $('[data-track-result]');
@@ -43,6 +96,7 @@ function render(o) {
       </div>
       <p class="track-status" style="--c:${s.color}"><span>${esc(t(s))}</span></p>
       <p class="lead">${esc(L(...COPY[o.status]))}</p>
+      ${driverHTML(o.driver)}
       ${
         cancelled
           ? ''
@@ -81,6 +135,7 @@ function render(o) {
     </div>`;
   host.hidden = false;
   $('[data-track-form]').hidden = true;
+  paintMap(host, o.driver);
 }
 
 async function lookup(no, phone, { quiet = false } = {}) {
@@ -124,13 +179,16 @@ async function lookup(no, phone, { quiet = false } = {}) {
 
 /** Live status: instant in demo mode (same browser), polling against Supabase. */
 async function startLive() {
-  clearInterval(timer);
+  clearTimeout(timer);
   stopLive?.();
   const api = await publicApi();
   stopLive = api.onChange?.((c) => c.table !== 'subscribers' && current && lookup(current.no, current.phone, { quiet: true }));
-  timer = setInterval(() => {
+  // Every 15 s while a courier is on the way (live map), otherwise every 30 s.
+  const tick = () => {
     if (!document.hidden && current) lookup(current.no, current.phone, { quiet: true });
-  }, 30_000);
+    timer = setTimeout(tick, current?.data?.driver ? 15_000 : 30_000);
+  };
+  timer = setTimeout(tick, current?.data?.driver ? 15_000 : 30_000);
 }
 
 async function unsubscribe(token) {
@@ -192,7 +250,8 @@ boot({
       }
       if (e.target.closest('[data-another]')) {
         current = null;
-        clearInterval(timer);
+        map = null;
+        clearTimeout(timer);
         $('[data-track-result]').hidden = true;
         form.hidden = false;
         form.reset();

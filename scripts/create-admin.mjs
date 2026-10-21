@@ -1,6 +1,8 @@
-// Creates (or promotes) an owner account for ZOOOT HQ on your Supabase project.
+// Creates (or promotes) an owner account for ZOOOT HQ — or a delivery courier —
+// on your Supabase project.
 //
 //   SUPABASE_URL=https://xxxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=… npm run create-admin -- owner@example.com
+//   … npm run create-admin -- --courier driver@example.com "Salem" 0550000000
 //
 // The service-role key is a server secret: run this on your own machine, never
 // commit the key or put it in the website build. You'll be asked for the password
@@ -9,7 +11,11 @@ import { createInterface } from 'node:readline/promises';
 
 const url = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const email = (process.argv[2] || process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const args = process.argv.slice(2);
+const asCourier = args[0] === '--courier';
+if (asCourier) args.shift();
+const [argEmail, courierName = '', courierPhone = ''] = args;
+const email = (argEmail || process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 if (!url || !key || !email) {
   console.error('Usage: SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npm run create-admin -- owner@example.com');
   process.exit(1);
@@ -52,9 +58,18 @@ if (user) {
   console.log(`✓ Created ${email}`);
 }
 
-await call('/rest/v1/admins?on_conflict=user_id', {
-  method: 'POST',
-  headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-  body: JSON.stringify({ user_id: user.id, email }),
-});
-console.log(`✓ ${email} is now an owner — sign in at <your site>/admin/`);
+if (asCourier) {
+  await call('/rest/v1/couriers?on_conflict=user_id', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: user.id, email, name: courierName || email.split('@')[0], phone: courierPhone || null, active: true }),
+  });
+  console.log(`✓ ${email} is now a courier — they sign in at <your site>/courier/`);
+} else {
+  await call('/rest/v1/admins?on_conflict=user_id', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: user.id, email }),
+  });
+  console.log(`✓ ${email} is now an owner — sign in at <your site>/admin/`);
+}

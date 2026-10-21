@@ -20,6 +20,7 @@ Brand design by **Shatha & Sarah Alghamdi** · Website developed by **Mamar**.
 | `story.html` | The brand system as an editorial: signature rules, logo variants, colourways, click-to-copy colour system, souq fabrics, anatomy, hoodie & print spec, print methods, founders' signature collection. |
 | `track.html` | **Order tracking** for customers: order number + the mobile used at checkout → live status timeline, courier and tracking number, items. Also handles newsletter unsubscribe links. |
 | `admin/` | **ZOOOT HQ**, the owners' dashboard (installable app). See below. |
+| `courier/` | **ZOOOT Delivery**, the couriers' app (installable). See below. |
 | `404.html` | "هالصفحة مو مزبوووطة". |
 
 Site-wide: intro loader, page-wipe transitions, smooth scrolling (Lenis), word-by-word reveals (Arabic-safe: split on words, never letters), custom cursor, magnetic buttons, velocity-reactive marquees, cart drawer with persistent bag, checkout with validation and order confirmation, newsletter form, AR/EN switch, reduced-motion support, keyboard and screen-reader labels.
@@ -69,6 +70,27 @@ An installable app (PWA) for the owners, in Arabic and English, on desktop and p
   - Campaign composer with a test send, plus the send log.
 - **Live**: new orders pop up with a sound, a toast, the app badge and (optionally) phone notifications. The customer's tracking page updates on its own too.
 
+## Courier app — ZOOOT Delivery (`/courier/`)
+
+One screen with big buttons, made for a driver on the road. Three tabs: **On the way**, **Ready**, **Done today**.
+
+- **Ready**: orders that are confirmed or preparing and have no shipping company, plus anything the owner assigned. Tap **Start delivery**, pick an arrival time (15, 30, 45, 60 or 90 min), done.
+- **Message the customer in one tap**: WhatsApp opens with the message ready, in the customer's language:
+  > مرحبًا {name}، معك {courier} من zooot.sa 👋 طلبك رقم {order} في الطريق إليك 🚚 تقدر تتابعه من هنا: {tracking link} — فضلًا أرسل عنوانك الوطني أو موقعك، مع رقم الفيلا/الشقة/المبنى. وخلّ جوالك متاح. شكرًا!
+
+  There are also **Call**, **SMS** (same message) and **Map** buttons; Map opens the location the customer sent, or searches the address.
+- **Delivered**: shows the cash to collect, then one tap for "Collected X SAR cash". The payment is recorded and the order closes.
+- **More**: change the arrival time, save the location the customer sent, leave a note for the shop, or hand the order back.
+- **Live location**:
+  - While a courier has a delivery on the way, the app shares the phone's GPS. It keeps the screen awake and sends a ping every ~15 s or every 40 m.
+  - The customer's tracking page shows the courier on a live map.
+  - If there's no position from the last 10 minutes (permission denied, app closed, no signal), the page shows the **arrival time** instead. Phones pause web GPS when the app is in the background, so the ETA is the dependable fallback.
+- **Owner side**: on each order you can assign a driver and set or see the arrival time. **Settings → Couriers** lets you add, rename or deactivate couriers and see when each was last seen.
+
+Demo courier login: `courier1demo@zooot.sa` (the password you chose). With Supabase, couriers sign in with their own accounts:
+- **Create the account**: `npm run create-admin -- --courier driver@example.com "Salem" 05XXXXXXXX`, or create the user in Supabase and add it under **Settings → Couriers**.
+- **Access**: couriers only see delivery details. All their actions go through locked-down database functions (`courier_*`), and every step lands in the order's timeline.
+
 ### Demo mode vs live mode
 
 | | Demo (default) | Live (Supabase connected) |
@@ -84,6 +106,7 @@ The demo owner login is `admindemo@zooot.sa` (the password you chose). It stops 
 1. **Create a project** at [supabase.com](https://supabase.com).
 2. **Database**: open the SQL editor and run, in order:
    - `supabase/migrations/20261021000000_owner_dashboard.sql`
+   - `supabase/migrations/20261021010000_couriers.sql`
    - `supabase/seed.sql`
 
    Or use `supabase link` and then `supabase db push`.

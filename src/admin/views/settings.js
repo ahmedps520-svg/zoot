@@ -101,6 +101,30 @@ export default {
             }
           </section>
 
+          <section class="card" style="display:grid;gap:10px">
+            <div class="card-h" style="margin:0"><h2>${esc(L('المناديب', 'Couriers'))}</h2><a class="b b-sm" href="../courier/" target="_blank" rel="noopener">${icon('truck')}${esc(L('تطبيق المندوب', 'Courier app'))}</a></div>
+            ${
+              store.couriers.length
+                ? store.couriers
+                    .map((c) => {
+                      const l = c.location;
+                      const fresh = l && Date.now() - Date.parse(l.updated_at) < 10 * 60000;
+                      return `<div class="spread" style="padding:6px 0;border-bottom:1px solid #f0ebe1">
+                        <span class="row" style="gap:10px;flex-wrap:nowrap">${icon('user')}<span style="line-height:1.4"><strong>${esc(c.name || c.email)}</strong><br><small class="muted" dir="ltr">${esc(c.email || '')}${c.phone ? ` · ${esc(c.phone)}` : ''}</small><br><small style="color:${fresh ? 'var(--ok)' : 'var(--muted)'}">${esc(l ? `${fresh ? L('يشارك موقعه', 'Live now') : L('آخر موقع', 'Last seen')} · ${new Date(l.updated_at).toLocaleString(lang === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}` : L('ما شارك موقع للحين', 'No location yet'))}</small></span></span>
+                        <span class="row" style="flex-wrap:nowrap"><label class="switch" title="${esc(L('نشط', 'Active'))}"><input type="checkbox" data-courier-active="${esc(c.id)}" ${c.active ? 'checked' : ''}><span class="sr">${esc(L('نشط', 'Active'))}</span></label><button class="b b-sm b-icon b-ghost" type="button" data-courier-edit="${esc(c.id)}" aria-label="${esc(L('تعديل', 'Edit'))}">${icon('edit')}</button></span>
+                      </div>`;
+                    })
+                    .join('')
+                : `<p class="muted">${esc(L('ما فيه مناديب للحين.', 'No couriers yet.'))}</p>`
+            }
+            <button class="b" type="button" data-courier-add>${icon('plus')}${esc(L('أضف مندوب', 'Add a courier'))}</button>
+            <p class="muted" style="font-size:13px">${esc(
+              demo
+                ? L('وضع تجريبي: المندوب التجريبي يدخل بـ courier1demo@zooot.sa. بعد ربط Supabase كل مندوب يدخل بحسابه.', 'Demo mode: the demo courier signs in as courier1demo@zooot.sa. With Supabase, every courier gets their own account.')
+                : L('المندوب يحتاج حساب في Supabase أولًا (Authentication → Users أو npm run create-admin -- --courier)، بعدها أضفه هنا ببريده.', 'A courier needs a Supabase account first (Authentication → Users, or npm run create-admin -- --courier); then add them here by email.'),
+            )}</p>
+          </section>
+
           <section class="card" style="display:grid;gap:12px">
             <div class="card-h" style="margin:0"><h2>${esc(L('الحساب', 'Account'))}</h2></div>
             <div class="spread"><span dir="ltr">${esc(store.me.email)}</span><button class="b b-sm" type="button" data-signout>${icon('logout')}${esc(L('خروج', 'Sign out'))}</button></div>
@@ -169,6 +193,12 @@ export default {
     });
 
     el.addEventListener('change', async (e) => {
+      if (e.target.matches('[data-courier-active]')) {
+        const out = await busy(null, () => store.api.couriers.save(e.target.dataset.courierActive, { active: e.target.checked }), L('انحفظ', 'Saved'));
+        if (out) await reload(['couriers']);
+        else e.target.checked = !e.target.checked;
+        return;
+      }
       if (e.target.matches('[data-sound]')) {
         try {
           localStorage.setItem(SOUND, e.target.checked ? 'on' : 'off');
@@ -194,6 +224,26 @@ export default {
     el.addEventListener('click', async (e) => {
       const b = e.target.closest('button');
       if (!b) return;
+      if (b.matches('[data-courier-add], [data-courier-edit]')) {
+        const c = store.couriers.find((x) => x.id === b.dataset.courierEdit);
+        const r = await dialog({
+          title: c ? L('تعديل المندوب', 'Edit courier') : L('أضف مندوب', 'Add a courier'),
+          body: `${c ? '' : `<label class="f"><span>${esc(L('بريد حسابه', 'Their account email'))}</span><input name="email" type="email" dir="ltr" required></label>`}
+            <label class="f"><span>${esc(L('الاسم (يظهر للعميل)', 'Name (customers see it)'))}</span><input name="name" required value="${esc(c?.name || '')}"></label>
+            <label class="f"><span>${esc(L('الجوال', 'Mobile'))}</span><input name="phone" dir="ltr" inputmode="tel" value="${esc(c?.phone || '')}"></label>`,
+          actions: [
+            { label: L('إلغاء', 'Cancel'), value: '', cls: 'b-ghost' },
+            { label: L('حفظ', 'Save'), value: 'ok', cls: 'b-primary', submit: true },
+          ],
+        });
+        if (!r) return;
+        const out = await busy(null, () => (c ? store.api.couriers.save(c.id, { name: r.data.name, phone: r.data.phone }) : store.api.couriers.add(r.data)), L('انحفظ', 'Saved'));
+        if (out) {
+          await reload(['couriers']);
+          render();
+        }
+        return;
+      }
       if (b.matches('[data-push]')) {
         const mode = await busy(b, enablePush);
         if (mode) {

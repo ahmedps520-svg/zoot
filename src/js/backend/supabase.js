@@ -136,7 +136,7 @@ export const orders = {
     return orders.get(data.id);
   },
   async update(id, patch) {
-    const allowed = ['status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'customer_note', 'internal_note', 'lang', 'discount', 'shipping', 'courier', 'tracking_no'];
+    const allowed = ['status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'customer_note', 'internal_note', 'lang', 'discount', 'shipping', 'courier', 'tracking_no', 'courier_id', 'delivery_eta', 'delivery_location'];
     const row = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)).map(([k, v]) => [k, v === '' ? null : v]));
     const { error } = await sb.from('orders').update(row).eq('id', id);
     fail(error);
@@ -291,10 +291,31 @@ export const emails = {
   },
 };
 
+/** The delivery team (rows in public.couriers) with their last known position. */
+export const couriers = {
+  async list() {
+    const [{ data, error }, { data: locs }] = await Promise.all([sb.from('couriers').select('*').order('created_at'), sb.from('courier_locations').select('*')]);
+    fail(error);
+    return data.map((c) => ({ ...c, id: c.user_id, location: (locs || []).find((l) => l.courier_id === c.user_id) || null }));
+  },
+  async save(id, patch) {
+    const row = Object.fromEntries(Object.entries(patch).filter(([k]) => ['name', 'phone', 'active'].includes(k)));
+    const { data, error } = await sb.from('couriers').update(row).eq('user_id', id).select().single();
+    fail(error);
+    return { ...data, id: data.user_id };
+  },
+  /** The courier needs a Supabase user first (Authentication → Users, or npm run create-admin -- --courier). */
+  async add({ email, name, phone }) {
+    const { data, error } = await sb.rpc('admin_add_courier', { p_email: email, p_name: name || '', p_phone: phone || null });
+    fail(error);
+    return { ...data, id: data.user_id };
+  },
+};
+
 /** Realtime: owners get every order, payment and stock change as it happens. */
 export function live(cb) {
   const ch = sb.channel('owner-live');
-  for (const table of ['orders', 'order_items', 'payments', 'order_events', 'products']) {
+  for (const table of ['orders', 'order_items', 'payments', 'order_events', 'products', 'courier_locations']) {
     ch.on('postgres_changes', { event: '*', schema: 'public', table }, (payload) =>
       cb({ table, type: payload.eventType, record: payload.new && Object.keys(payload.new).length ? payload.new : payload.old }),
     );

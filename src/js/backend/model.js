@@ -40,7 +40,8 @@ export const SOURCES = [
   { id: 'manual', ar: 'يدوي', en: 'Manual' },
 ];
 
-export const COURIERS = ['SMSA', 'Aramex', 'SPL', 'J&T', 'DHL', 'Naqel', 'Redbox', 'Other'];
+/** 'ZOOOT' = our own delivery couriers (the courier app); the rest are shipping companies. */
+export const COURIERS = ['ZOOOT', 'SMSA', 'Aramex', 'SPL', 'J&T', 'DHL', 'Naqel', 'Redbox', 'Other'];
 
 export const byIdIn = (list, id) => list.find((x) => x.id === id);
 

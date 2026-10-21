@@ -1,0 +1,436 @@
+/* ==========================================================================
+   ZOOOT Delivery — couriers' app. Phone-first, thumb-sized, one screen.
+   Builds on admin.css (buttons, forms, toasts, dialogs).
+   ========================================================================== */
+body.courier {
+  background: var(--cream);
+  font-size: 16px;
+}
+.c-app,
+.c-login {
+  width: min(560px, 100%);
+  margin-inline: auto;
+  min-height: 100svh;
+}
+.c-app {
+  padding: 0 14px calc(28px + env(safe-area-inset-bottom));
+}
+.b.big {
+  min-height: 56px;
+  font-size: 17px;
+  border-radius: 16px;
+  width: 100%;
+}
+.b.big .i {
+  width: 22px;
+  height: 22px;
+}
+
+/* ------------------------------------------------------------------ top */
+.c-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-inline: -14px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background: var(--ink);
+  color: var(--cream);
+}
+.c-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.c-brand svg {
+  width: 84px;
+  height: 39px;
+}
+.c-brand .hq-pill {
+  background: var(--blue);
+  color: var(--white);
+}
+.c-brand.big svg {
+  width: 150px;
+  height: 70px;
+}
+.c-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  color: var(--cream);
+  font-weight: 700;
+}
+.c-pill {
+  margin: 12px 0 0;
+}
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgb(13 13 13 / 0.06);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: start;
+}
+.pill.on {
+  background: #dff3e7;
+  color: #10603a;
+}
+.pill.on .i {
+  animation: c-blink 1.6s infinite;
+}
+.pill.warn {
+  background: #fff4ec;
+  color: #8a3b0c;
+}
+.pill.bad {
+  background: #fff0f6;
+  color: #9c0f52;
+}
+@keyframes c-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+.c-demo {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ tabs */
+.c-tabs {
+  position: sticky;
+  top: calc(59px + env(safe-area-inset-top));
+  z-index: 15;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 12px -14px 0;
+  padding: 8px 14px;
+  background: rgb(242 235 223 / 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.c-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--muted);
+  background: rgb(13 13 13 / 0.05);
+}
+.c-tabs b {
+  min-width: 24px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgb(13 13 13 / 0.1);
+  font-family: var(--f-latin);
+  font-size: 13px;
+}
+.c-tabs [aria-selected='true'] {
+  background: var(--ink);
+  color: var(--cream);
+}
+.c-tabs [aria-selected='true'] b {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ cards */
+.c-list {
+  display: grid;
+  gap: 14px;
+  padding-top: 6px;
+}
+.c-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+}
+.c-card.is-go {
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.c-card.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.c-card.is-done {
+  opacity: 0.75;
+  gap: 4px;
+}
+.c-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.c-no {
+  font-family: var(--f-latin-black);
+  font-size: 20px;
+  direction: ltr;
+}
+.c-eta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #e2ebff;
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 14px;
+}
+.c-eta.late {
+  background: #fff0f6;
+  color: var(--bad);
+}
+.c-eta.done {
+  background: #dff3e7;
+  color: var(--ok);
+}
+.c-eta .i {
+  width: 16px;
+  height: 16px;
+}
+.c-who {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.c-who strong {
+  font-size: 19px;
+}
+.c-who a {
+  font-family: var(--f-latin);
+  font-weight: 700;
+  color: var(--blue);
+}
+.c-addr {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  align-items: start;
+  font-size: 15px;
+}
+.c-addr > div {
+  display: grid;
+  gap: 2px;
+}
+.c-pinned {
+  color: var(--blue);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.c-note,
+.c-items {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 14px;
+}
+.c-note {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #fff7d1;
+  color: var(--ink);
+}
+.c-items .i,
+.c-note .i,
+.c-due .i,
+.c-paid .i {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+.c-due {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--yellow);
+  font-weight: 700;
+}
+.c-due b {
+  font-family: var(--f-latin);
+  font-size: 22px;
+}
+.c-paid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #dff3e7;
+  color: #10603a;
+  font-weight: 700;
+}
+.c-contact {
+  display: grid;
+  gap: 8px;
+}
+.c-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+}
+.c-row .b {
+  min-height: 50px;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  padding: 6px;
+}
+.c-more {
+  justify-self: center;
+  color: var(--muted);
+}
+.c-empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 60px 16px;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.c-empty svg.logo {
+  width: 140px;
+  height: 65px;
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+/* ------------------------------------------------------------------ sheet */
+.sheet {
+  width: min(560px, 100%);
+  max-width: 100%;
+  max-height: 92svh;
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: 26px 26px 0 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+.sheet::backdrop {
+  background: rgb(13 13 13 / 0.55);
+}
+.sheet[open] {
+  animation: sheet-up 0.32s var(--ease);
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40%);
+    opacity: 0;
+  }
+}
+.sheet-in {
+  display: grid;
+  gap: 14px;
+  padding: 10px 18px calc(18px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  max-height: 92svh;
+}
+.sheet-grip {
+  justify-self: center;
+  width: 44px;
+  height: 5px;
+  border-radius: 5px;
+  background: rgb(13 13 13 / 0.18);
+}
+.sheet h2 {
+  font-family: var(--f-head);
+  font-weight: 900;
+  font-size: 22px;
+}
+html[lang='en'] .sheet h2 {
+  font-weight: 400;
+}
+.sheet-btns {
+  display: grid;
+  gap: 8px;
+}
+.sheet-btns .b {
+  min-height: 52px;
+  font-size: 16px;
+  width: 100%;
+}
+.msg-preview {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #e7ffdb;
+  border: 1px solid #b9e8a4;
+  font-family: var(--f-body);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.due-big {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--yellow);
+  font-weight: 700;
+}
+.due-big b {
+  font-family: var(--f-latin);
+  font-size: 34px;
+}
+
+/* ------------------------------------------------------------------ login */
+.c-login {
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+.c-login-card {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+}
+.c-login-card .c-brand {
+  justify-self: center;
+}
+.c-login-card h1 {
+  font-family: var(--f-head);
+  font-weight: 900;
+  font-size: 28px;
+  text-align: center;
+}
+.c-login-card > p.muted {
+  text-align: center;
+  margin-top: -8px;
+}
+html[lang='en'] .c-login-card h1 {
+  font-weight: 400;
+}

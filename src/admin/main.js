@@ -33,6 +33,7 @@ export const store = {
   subscribers: [],
   settings: { public: {}, notifications: {} },
   emails: [],
+  couriers: [],
   live: false,
   selfCreated: new Set(),
   installPrompt: null,
@@ -59,7 +60,7 @@ export function lowStock() {
 }
 
 /* ------------------------------------------------------------------ data */
-export async function reload(which = ['orders', 'products', 'subscribers', 'settings', 'emails']) {
+export async function reload(which = ['orders', 'products', 'subscribers', 'settings', 'emails', 'couriers']) {
   const api = store.api;
   const jobs = {
     orders: () => api.orders.list(),
@@ -67,6 +68,7 @@ export async function reload(which = ['orders', 'products', 'subscribers', 'sett
     subscribers: () => api.subscribers.list(),
     settings: () => api.settings.get(),
     emails: () => api.emails.list(),
+    couriers: () => api.couriers?.list() ?? [],
   };
   const results = await Promise.allSettled(which.map((k) => jobs[k]()));
   results.forEach((r, i) => {
@@ -223,8 +225,22 @@ function onLive(change) {
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(async () => {
     const which =
-      change.table === '*' ? undefined : change.table === 'products' ? ['products'] : change.table === 'subscribers' ? ['subscribers', 'emails'] : change.table === 'settings' ? ['settings'] : change.table === 'email_log' ? ['emails', 'orders'] : ['orders', 'products', 'emails'];
+      change.table === '*'
+        ? undefined
+        : change.table === 'products'
+          ? ['products']
+          : change.table === 'subscribers'
+            ? ['subscribers', 'emails']
+            : change.table === 'settings'
+              ? ['settings']
+              : change.table === 'email_log'
+                ? ['emails', 'orders']
+                : ['couriers', 'courier_locations'].includes(change.table)
+                  ? ['couriers']
+                  : ['orders', 'products', 'emails'];
     await reload(which);
+    // Location pings only refresh screens that show couriers.
+    if (change.table === 'courier_locations' && !/^#\/(orders\/|settings)/.test(location.hash)) return;
     render({ soft: true });
   }, 250);
 }

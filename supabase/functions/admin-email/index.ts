@@ -8,11 +8,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  // Only signed-in owners (rows in public.admins) get past this point.
+  // Only signed-in owners (rows in public.admins) get past this point — plus
+  // couriers, who may trigger the status email for an order they're delivering.
   const caller = callerClient(req);
   const { data: auth } = await caller.auth.getUser();
   const { data: isAdmin } = await caller.rpc('is_admin');
-  if (!auth?.user || !isAdmin) return json({ error: 'forbidden' }, 403);
+  const { data: isCourier } = isAdmin ? { data: false } : await caller.rpc('is_courier');
+  if (!auth?.user || (!isAdmin && !isCourier)) return json({ error: 'forbidden' }, 403);
 
   let input: Record<string, string | boolean | undefined>;
   try {
@@ -27,6 +29,7 @@ Deno.serve(async (req) => {
 
   switch (input.action) {
     case 'ping':
+      if (!isAdmin) return json({ error: 'forbidden' }, 403);
       return json({
         resend: resendConfigured(),
         from: Deno.env.get('MAIL_FROM') ?? 'ZOOOT <onboarding@resend.dev>',
@@ -36,6 +39,11 @@ Deno.serve(async (req) => {
     case 'status':
     case 'custom': {
       const order = await loadOrder(db, String(input.order_id));
+      if (!isAdmin) {
+        // Couriers: status emails only, only for their own delivery, only if the owner enabled them.
+        if (input.action !== 'status' || order.courier_id !== auth.user.id) return json({ error: 'forbidden' }, 403);
+        if (settings.notifications?.status_emails === false) return json({ status: 'skipped' });
+      }
       if (!order.customer_email) return json({ error: 'no_email' }, 400);
       const mail =
         input.action === 'status'
@@ -47,6 +55,7 @@ Deno.serve(async (req) => {
     }
 
     case 'campaign': {
+      if (!isAdmin) return json({ error: 'forbidden' }, 403);
       const content = {
         subject: String(input.subject ?? ''),
         heading: String(input.heading ?? ''),

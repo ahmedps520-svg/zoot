@@ -26,3 +26,14 @@ export const DEMO_OWNER = {
   iterations: 150000,
   hash: 'f06ccd4e1ff9e3c92a9b9357f87b415df82c936ceb551675c78dc25a78e61ae4',
 };
+
+/** Demo courier login(s) for the delivery app — demo mode only, hashes only. */
+export const DEMO_COURIERS = [
+  {
+    id: 'courier-demo-1',
+    email: 'courier1demo@zooot.sa',
+    salt: '0edd9ea73d99392a6accecfbb0b17654',
+    iterations: 150000,
+    hash: '0395be12fb255ecc2b0ccba161dc0c86b9f5dc1276027d45ceba1db1a1e46e3c',
+  },
+];

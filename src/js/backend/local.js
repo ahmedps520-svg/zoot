@@ -5,8 +5,8 @@
  * Tabs stay in sync through BroadcastChannel + storage events (live orders).
  */
 import { CONFIG, PRODUCTS } from '../data.js';
-import { DEMO_OWNER } from './config.js';
-import { computeTotals, FLOW, ONE, phoneKey, round2, SIZES } from './model.js';
+import { DEMO_COURIERS, DEMO_OWNER } from './config.js';
+import { balanceOf, computeTotals, FLOW, ONE, phoneKey, round2, SIZES } from './model.js';
 import * as T from '../../../supabase/functions/_shared/email-templates.js';
 
 const KEY = 'zooot-db-v1';
@@ -32,6 +32,8 @@ const blank = () => ({
     notifications: { owner_email: DEMO_OWNER.email, status_emails: true, owner_new_order: true },
   },
   emails: [],
+  couriers: [{ id: DEMO_COURIERS[0].id, email: DEMO_COURIERS[0].email, name: 'سالم', phone: '0550000001', active: true, created_at: new Date().toISOString() }],
+  locations: {},
 });
 
 function load() {
@@ -196,6 +198,11 @@ function buildOrder(db, p, { admin = false, actor = null, at = now() } = {}) {
     shipping,
     courier: null,
     tracking_no: null,
+    courier_id: null,
+    delivery_eta: null,
+    delivery_location: null,
+    out_for_delivery_at: null,
+    delivered_at: null,
     created_at: at,
     updated_at: at,
     items,
@@ -208,7 +215,7 @@ function buildOrder(db, p, { admin = false, actor = null, at = now() } = {}) {
   return order;
 }
 
-const ORDER_FIELDS = ['status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'customer_note', 'internal_note', 'lang', 'discount', 'shipping', 'courier', 'tracking_no'];
+const ORDER_FIELDS = ['status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'customer_note', 'internal_note', 'lang', 'discount', 'shipping', 'courier', 'tracking_no', 'courier_id', 'delivery_eta', 'delivery_location'];
 
 function patchOrder(db, order, patch, actor) {
   const before = { status: order.status, total: order.total };
@@ -217,6 +224,8 @@ function patchOrder(db, order, patch, actor) {
   order.shipping = Number(order.shipping) || 0;
   Object.assign(order, computeTotals(order), { updated_at: now() });
   if (order.status !== before.status) {
+    if (order.status === 'shipped') order.out_for_delivery_at ||= now();
+    if (order.status === 'delivered') order.delivered_at = now();
     order.events.push(ev('status', { from: before.status, to: order.status }, actor));
     if (order.status === 'cancelled') adjustStock(db, order, 1);
     if (before.status === 'cancelled') adjustStock(db, order, -1);
@@ -300,7 +309,8 @@ export async function subscribe({ email, lang = 'ar', source = 'footer' }) {
 }
 
 export async function trackOrder(orderNo, phone) {
-  const o = load().orders.find((x) => x.order_no.toUpperCase() === String(orderNo || '').trim().toUpperCase());
+  const db = load();
+  const o = db.orders.find((x) => x.order_no.toUpperCase() === String(orderNo || '').trim().toUpperCase());
   if (!o || phoneKey(phone).length < 9 || phoneKey(o.customer_phone) !== phoneKey(phone)) return null;
   return {
     order_no: o.order_no,
@@ -313,9 +323,20 @@ export async function trackOrder(orderNo, phone) {
     total: o.total,
     currency: o.currency,
     lang: o.lang,
+    delivered_at: o.delivered_at || null,
+    driver: driverFor(db, o),
     items: o.items.map(({ name, qty, image, options }) => ({ name, qty, image, options })),
     events: o.events.filter((e) => ['created', 'status'].includes(e.type)).map((e) => ({ type: e.type, to: e.data.to, at: e.created_at })),
   };
+}
+
+/** What the customer sees about their courier: name, ETA and (if fresh) the live position. */
+function driverFor(db, o) {
+  if (o.status !== 'shipped' || !o.courier_id) return null;
+  const c = (db.couriers || []).find((x) => x.id === o.courier_id);
+  const l = (db.locations || {})[o.courier_id];
+  const fresh = l && Date.now() - Date.parse(l.updated_at) < 10 * 60_000;
+  return { name: c?.name || '', phone: c?.phone || null, eta: o.delivery_eta, out_at: o.out_for_delivery_at, location: fresh ? { lat: l.lat, lng: l.lng, accuracy: l.accuracy, heading: l.heading, at: l.updated_at } : null };
 }
 
 export async function unsubscribe(token) {
@@ -741,6 +762,12 @@ export const demo = {
         if (target === 'cancelled') adjustStock(db, o, 1);
       }
       db.orders.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      // The demo courier is out with the two newest shipped orders.
+      db.couriers = db.couriers?.length ? db.couriers : blank().couriers;
+      db.orders
+        .filter((o) => o.status === 'shipped')
+        .slice(0, 2)
+        .forEach((o, i) => Object.assign(o, { courier: 'ZOOOT', tracking_no: null, courier_id: db.couriers[0].id, out_for_delivery_at: now(), delivery_eta: new Date(Date.now() + (25 + i * 20) * 60_000).toISOString() }));
       const domains = ['gmail.com', 'outlook.com', 'icloud.com', 'hotmail.com'];
       for (let i = 0; i < 46; i++) {
         db.subscribers.push({
@@ -760,6 +787,7 @@ export const demo = {
     tx(
       (db) => {
         db.orders = db.orders.filter((o) => !o.demo);
+        db.locations = {};
         db.subscribers = db.subscribers.filter((s) => !s.demo);
         for (const [id, ov] of Object.entries(db.products)) {
           if (ov.custom) continue;
@@ -780,5 +808,179 @@ export const demo = {
   import(data) {
     if (!data || data.version !== 1) throw new Error('bad_file');
     save({ ...blank(), ...data }, { table: '*', type: 'SYNC' });
+  },
+};
+
+/* ================================================================== couriers */
+const COURIER_SESSION = 'zooot-courier-session';
+const COURIER_THROTTLE = 'zooot-courier-throttle';
+const DAY_MS = 86_400_000;
+
+/** Owner side: the delivery team and where they are. */
+export const couriers = {
+  async list() {
+    const db = load();
+    return clone((db.couriers || []).map((c) => ({ ...c, location: (db.locations || {})[c.id] || null })));
+  },
+  async save(id, patch) {
+    return tx(
+      (db) => {
+        const c = db.couriers.find((x) => x.id === id);
+        if (!c) throw new Error('not_found');
+        for (const k of ['name', 'phone', 'active']) if (k in patch) c[k] = patch[k];
+        return clone(c);
+      },
+      { table: 'couriers', type: 'UPDATE' },
+    );
+  },
+  /** Demo: only the demo courier has a password, extra couriers are for assignment practice. */
+  async add({ email, name, phone }) {
+    return tx(
+      (db) => {
+        const clean = String(email || '').trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) throw new Error('invalid_email');
+        const existing = db.couriers.find((x) => x.email === clean);
+        if (existing) return clone(Object.assign(existing, { name: name || existing.name, phone: phone || existing.phone, active: true }));
+        const c = { id: uid(), email: clean, name: name || clean.split('@')[0], phone: phone || null, active: true, created_at: now() };
+        db.couriers.push(c);
+        return clone(c);
+      },
+      { table: 'couriers', type: 'INSERT' },
+    );
+  },
+};
+
+const courierView = (o, me) => ({
+  id: o.id,
+  order_no: o.order_no,
+  status: o.status,
+  created_at: o.created_at,
+  customer_name: o.customer_name,
+  customer_phone: o.customer_phone,
+  city: o.city,
+  district: o.district,
+  address: o.address,
+  customer_note: o.customer_note,
+  lang: o.lang,
+  payment_method: o.payment_method,
+  payment_status: o.payment_status,
+  total: o.total,
+  balance: balanceOf(o),
+  courier_id: o.courier_id || null,
+  mine: o.courier_id === me,
+  delivery_eta: o.delivery_eta || null,
+  delivery_location: o.delivery_location || null,
+  out_for_delivery_at: o.out_for_delivery_at || null,
+  delivered_at: o.delivered_at || null,
+  items: o.items.map(({ name, qty, image, options }) => ({ name, qty, image, options })),
+});
+
+const courierCanSee = (o, me) =>
+  (o.courier_id === me && (['confirmed', 'preparing', 'shipped'].includes(o.status) || (o.status === 'delivered' && Date.now() - Date.parse(o.delivered_at || 0) < DAY_MS))) ||
+  (!o.courier_id && ['confirmed', 'preparing'].includes(o.status) && ['', 'ZOOOT'].includes(o.courier || ''));
+
+function courierSession() {
+  const s = readJSON(COURIER_SESSION);
+  if (!s || s.exp < Date.now()) return null;
+  const c = (load().couriers || []).find((x) => x.id === s.id && x.active);
+  return c ? { id: c.id, email: c.email, name: c.name, phone: c.phone } : null;
+}
+function requireCourier() {
+  const me = courierSession();
+  if (!me) throw new Error('not_courier');
+  return me;
+}
+
+/** The delivery app's backend (demo). Mirrors the courier_* RPCs in Supabase. */
+export const courierApp = {
+  mode: 'demo',
+  auth: {
+    async signIn(email, password, { remember = true } = {}) {
+      const th = readJSON(COURIER_THROTTLE) || { fails: 0, until: 0 };
+      if (th.until > Date.now()) throw Object.assign(new Error('too_many_attempts'), { retryIn: Math.ceil((th.until - Date.now()) / 1000) });
+      const cred = DEMO_COURIERS.find((c) => c.email === String(email).trim().toLowerCase());
+      const ok = cred && (await pbkdf2(String(password), cred.salt, cred.iterations)) === cred.hash;
+      const c = ok && (load().couriers || []).find((x) => x.id === cred.id && x.active);
+      if (!c) {
+        th.fails += 1;
+        if (th.fails >= 5) Object.assign(th, { fails: 0, until: Date.now() + 60_000 });
+        localStorage.setItem(COURIER_THROTTLE, JSON.stringify(th));
+        throw new Error('invalid_credentials');
+      }
+      localStorage.removeItem(COURIER_THROTTLE);
+      localStorage.setItem(COURIER_SESSION, JSON.stringify({ id: c.id, exp: Date.now() + (remember ? 30 : 1) * DAY_MS }));
+      return courierSession();
+    },
+    async signOut() {
+      localStorage.removeItem(COURIER_SESSION);
+    },
+    async session() {
+      return courierSession();
+    },
+  },
+  async me(patch = {}) {
+    const me = requireCourier();
+    return tx(
+      (db) => {
+        const c = db.couriers.find((x) => x.id === me.id);
+        if (patch.name?.trim()) c.name = patch.name.trim();
+        if (patch.phone?.trim()) c.phone = patch.phone.trim();
+        return { id: c.id, email: c.email, name: c.name, phone: c.phone };
+      },
+      { table: 'couriers', type: 'UPDATE' },
+    );
+  },
+  async orders() {
+    const me = requireCourier();
+    return load()
+      .orders.filter((o) => courierCanSee(o, me.id))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((o) => courierView(o, me.id));
+  },
+  async act(orderId, action, { eta = null, text = null, collected = null } = {}) {
+    const me = requireCourier();
+    return tx(
+      (db) => {
+        const o = findOrder(db, orderId);
+        if (!o) throw new Error('not_found');
+        const free = !o.courier_id && ['claim', 'start'].includes(action) && ['confirmed', 'preparing', 'shipped'].includes(o.status);
+        if (o.courier_id !== me.id && !free) throw new Error('not_your_order');
+        const actor = me.email;
+        if (action === 'claim') patchOrder(db, o, { courier_id: me.id, courier: o.courier || 'ZOOOT' }, actor);
+        else if (action === 'start') {
+          if (!['confirmed', 'preparing', 'shipped'].includes(o.status)) throw new Error(`bad_status:${o.status}`);
+          patchOrder(db, o, { courier_id: me.id, courier: o.courier || 'ZOOOT', status: 'shipped', delivery_eta: eta || o.delivery_eta || new Date(Date.now() + 45 * 60_000).toISOString() }, actor);
+        } else if (action === 'eta') patchOrder(db, o, { delivery_eta: eta }, actor);
+        else if (action === 'location') patchOrder(db, o, { delivery_location: String(text || '').trim().slice(0, 500) || null }, actor);
+        else if (action === 'delivered') {
+          if (o.status !== 'shipped') throw new Error(`bad_status:${o.status}`);
+          const cash = Math.min(Number(collected) || 0, balanceOf(o));
+          if (cash > 0) {
+            o.payments.push({ id: uid(), amount: round2(cash), method: 'cash', reference: null, note: 'collected by courier', paid_at: now() });
+            o.events.push(ev('payment', { amount: round2(cash), method: 'cash' }, actor));
+          }
+          patchOrder(db, o, { status: 'delivered' }, actor);
+        } else if (action === 'release') {
+          if (o.status === 'delivered') throw new Error(`bad_status:${o.status}`);
+          patchOrder(db, o, { courier_id: null, delivery_eta: null }, actor);
+        } else if (action === 'note') o.events.push(ev('note', { text: String(text || '').slice(0, 2000) }, actor));
+        else throw new Error('unknown_action');
+        return courierView(o, me.id);
+      },
+      (v) => ({ table: 'orders', type: 'UPDATE', record: { id: v.id } }),
+    );
+  },
+  async ping({ lat, lng, accuracy = null, heading = null, speed = null }) {
+    const me = requireCourier();
+    tx(
+      (db) => {
+        db.locations ||= {};
+        db.locations[me.id] = { lat, lng, accuracy, heading, speed, updated_at: now() };
+      },
+      { table: 'courier_locations', type: 'UPDATE' },
+    );
+  },
+  live(cb) {
+    return onChange(cb);
   },
 };

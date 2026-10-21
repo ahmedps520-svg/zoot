@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "ZOOOT Delivery — تطبيق مندوب زوووط",
+  "short_name": "ZOOOT GO",
+  "description": "Deliveries for ZOOOT couriers: message customers, live location, mark delivered.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2EBDF",
+  "theme_color": "#1F4BFF",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

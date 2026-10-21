@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DB=zooot_test
 psql -q -d postgres -c "drop database if exists $DB" -c "create database $DB"
-for f in supabase/tests/stub.sql supabase/migrations/*.sql supabase/seed.sql supabase/tests/schema.test.sql; do
+for f in supabase/tests/stub.sql supabase/migrations/*.sql supabase/seed.sql supabase/tests/schema.test.sql supabase/tests/couriers.test.sql; do
   echo "→ $f"
   psql -q -v ON_ERROR_STOP=1 -d "$DB" -f "$f"
 done

@@ -111,6 +111,10 @@ const ERRORS = {
   builtin_product: ['منتجات الإصدار ما تنحذف — أخفها بدلًا من ذلك', 'Drop products can’t be deleted — hide them instead'],
   duplicate_id: ['المعرّف مستخدم من قبل', 'That ID is already used'],
   demo_mode: ['غير متاح في الوضع التجريبي', 'Not available in demo mode'],
+  user_not_found: ['ما فيه حساب بهذا البريد في Supabase — أنشئه أولًا', 'No Supabase account with that email — create it first'],
+  not_courier: ['هذا الحساب مو مسجّل كمندوب', 'This account isn’t a courier'],
+  not_your_order: ['هذا الطلب مع مندوب ثاني', 'Another courier has this order'],
+  bad_status: ['حالة الطلب ما تسمح بهذا', 'The order’s status doesn’t allow that'],
 };
 export function errorText(e) {
   const msg = e?.message || String(e);
