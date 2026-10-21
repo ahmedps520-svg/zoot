@@ -1,1 +1,0 @@
-import{b as a,r as e,g as t}from"./main-qwrlvl4z.js";a({intro(){e||(t.from(".nf-num span",{scale:.3,rotate:-20,opacity:0,duration:1.1,ease:"back.out(2.4)"}),t.from(".nf-title, .nf-inner .lead, .nf-ctas",{y:30,opacity:0,duration:.9,ease:"power3.out",stagger:.1,delay:.25}),t.to(".nf-num span",{rotate:4,yoyo:!0,repeat:-1,duration:1.6,ease:"sine.inOut",delay:1.2}))}});

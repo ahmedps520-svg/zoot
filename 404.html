@@ -29,9 +29,12 @@
   })();
 </script>
 
-  <script type="module" crossorigin src="./assets/404-DWVqsLkE.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/main-qwrlvl4z.js">
-  <link rel="stylesheet" crossorigin href="./assets/main--VePt5XP.css">
+  <script type="module" crossorigin src="./assets/404-B9leI3jk.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/config-BlfVIUCX.js">
+  <link rel="modulepreload" crossorigin href="./assets/data-DzIjeNT0.js">
+  <link rel="modulepreload" crossorigin href="./assets/main-CndaHzFm.js">
+  <link rel="stylesheet" crossorigin href="./assets/config-CpcRajZ3.css">
+  <link rel="stylesheet" crossorigin href="./assets/main-CWokOuwH.css">
   <link rel="stylesheet" crossorigin href="./assets/404-Dv8ELjgJ.css">
 </head>
 <body data-page="404" data-title-en="404 — This page isn’t just right · ZOOOT">
@@ -165,6 +168,7 @@
         <a href="story.html#system" data-en="The iconic back">الظهر الأيقوني</a>
         <a href="story.html#fabrics" data-en="Souq fabrics">أقمشة السوق</a>
         <a href="story.html#signature" data-en="Founders' signature">توقيع المؤسِّستين</a>
+        <a href="track.html" data-en="Track your order">تتبّع طلبك</a>
       </nav>
       <div class="footer-col">
         <h3 class="footer-h" data-en="Follow the mood">تابع المزاج</h3>
@@ -243,6 +247,10 @@
         <label for="co-address" data-en="Address details">العنوان بالتفصيل</label>
         <textarea id="co-address" name="address" rows="2" required></textarea>
       </div>
+      <fieldset class="field pay-methods" data-pay-methods>
+        <legend data-en="Payment">طريقة الدفع</legend>
+        <div class="pay-opts" data-pay-opts></div>
+      </fieldset>
       <div class="checkout-summary" data-checkout-summary></div>
       <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
       <button class="btn btn--block" type="submit" data-magnetic><span data-en="Place order">ثبّت الطلب</span><svg aria-hidden="true"><use href="#i-check"/></svg></button>
@@ -268,7 +276,12 @@
       </span>
     </button>
     <p class="checkout-next" data-checkout-next></p>
+    <div class="bank-box" data-bank hidden>
+      <strong data-en="Bank transfer details">بيانات التحويل</strong>
+      <p data-bank-text dir="auto"></p>
+    </div>
     <div class="checkout-done-actions">
+      <a class="btn" data-track-link href="track.html"><svg aria-hidden="true"><use href="#i-arrow"/></svg><span data-en="Track your order">تتبّع طلبك</span></a>
       <a class="btn btn--whatsapp" data-whatsapp-link href="#" target="_blank" rel="noopener" hidden><svg aria-hidden="true"><use href="#i-whatsapp"/></svg><span data-en="Confirm on WhatsApp">أكّد عبر واتساب</span></a>
       <button class="btn btn--ghost" type="button" data-checkout-close><span data-en="Keep browsing">كمّل تصفّح</span></button>
     </div>
