@@ -24,7 +24,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Leave these repository variables empty to ship the dashboard in demo mode.
+      # Settings → Secrets and variables → Actions → Variables.
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
       - run: touch dist/.nojekyll
       - uses: peaceiris/actions-gh-pages@v4
         with:

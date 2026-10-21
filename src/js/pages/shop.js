@@ -70,10 +70,19 @@ boot({
   setup() {
     const grid = $('[data-grid]');
     render(grid);
-    ['all', 'set', 'hoodie', 'sirwal'].forEach((k) => {
-      $(`[data-count-for="${k}"]`).textContent = k === 'all' ? PRODUCTS.length : PRODUCTS.filter((p) => p.type === k).length;
-    });
+    const counts = () => {
+      const live = PRODUCTS.filter((p) => !p.hidden);
+      ['all', 'set', 'hoodie', 'sirwal'].forEach((k) => {
+        $(`[data-count-for="${k}"]`).textContent = k === 'all' ? live.length : live.filter((p) => p.type === k).length;
+      });
+    };
+    counts();
     apply(grid, false);
+    window.addEventListener('catalog:change', () => {
+      render(grid);
+      counts();
+      apply(grid, false);
+    });
     $('[data-filters]').addEventListener('click', (e) => {
       const b = e.target.closest('[data-filter]');
       if (!b || b.dataset.filter === filter) return;

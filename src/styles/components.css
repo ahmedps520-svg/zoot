@@ -1798,3 +1798,107 @@ html.js.motion .reveal-up {
   letter-spacing: 0;
   -webkit-text-stroke-width: 2.5px;
 }
+
+/* ------------------------------------------------- live stock (owner dashboard) */
+.p-soldout {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 12px;
+  bottom: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--magenta);
+  color: var(--white);
+  font-weight: 800;
+  font-size: 13px;
+  transform: rotate(-3deg);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.p-card.is-soldout .p-media img {
+  filter: grayscale(0.85) contrast(0.95);
+  opacity: 0.75;
+}
+.p-was {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85em;
+  margin-inline-end: 4px;
+}
+.p-quick button[disabled] {
+  opacity: 0.35;
+  text-decoration: line-through;
+  pointer-events: none;
+}
+.opt[disabled],
+.opt[aria-disabled='true'] {
+  opacity: 0.35;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------- checkout: pay + bank */
+.pay-methods {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.pay-methods legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.pay-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pay-opt {
+  position: relative;
+  cursor: pointer;
+}
+.pay-opt input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.pay-opt span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid rgb(13 13 13 / 0.18);
+  background: var(--white);
+  font-weight: 700;
+  font-size: 14px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.pay-opt input:checked + span {
+  border-color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.pay-opt input:focus-visible + span {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.bank-box {
+  width: 100%;
+  max-width: 440px;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px dashed rgb(13 13 13 / 0.3);
+  background: var(--paper);
+  text-align: start;
+  font-size: 14px;
+}
+.bank-box p {
+  white-space: pre-wrap;
+  font-family: var(--f-latin);
+}

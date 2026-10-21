@@ -8,10 +8,8 @@ export const CONFIG = {
   currency: { ar: 'ر.س', en: 'SAR' },
   prices: { hoodie: 289, sirwal: 229, set: 479 }, // TODO: confirm with the founders
   sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-  // Checkout delivery. Fill at least one before going live:
+  // Fallback only — the owner dashboard (Settings) overrides it once set.
   whatsapp: '', // international format without "+", e.g. '9665XXXXXXXX'
-  orderEndpoint: '', // optional URL that accepts a JSON POST (Formspree, Make, Sheets…)
-  newsletterEndpoint: '', // optional URL that accepts a JSON POST { email }
   socials: {
     instagram: 'https://www.instagram.com/',
     tiktok: 'https://www.tiktok.com/',

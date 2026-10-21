@@ -54,6 +54,10 @@ export const UI = {
   typeSet: { ar: 'طقم', en: 'Set' },
   typeHoodie: { ar: 'هودي', en: 'Hoodie' },
   typeSirwal: { ar: 'شروال', en: 'Sirwal' },
+  soldOut: { ar: 'نفد', en: 'Sold out' },
+  soldOutLong: { ar: 'نفدت الكمية — ارجع قريب', en: 'Sold out — back soon' },
+  sizeSoldOut: { ar: 'هذا المقاس نفد', en: 'That size is sold out' },
+  trackOrder: { ar: 'تتبّع طلبك', en: 'Track your order' },
 };
 
 export const getLang = () => lang;

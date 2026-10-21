@@ -7,6 +7,7 @@ import { byId, COLORWAYS, CONFIG, FABRICS, LOOKS, PRODUCTS, productById, STATEME
 import { createOutfit, encodeOutfit, HOODIE_COLORS } from '../components/outfit.js';
 import { productCard, bindQuickAdd, productCode, TYPE_LABEL } from '../components/productCard.js';
 import { renderAnatomy } from '../components/hotspots.js';
+import { soldOut } from '../core/store.js';
 
 const params = new URLSearchParams(location.search);
 let product = productById(params.get('id')) || productById('hoodie-01');
@@ -148,7 +149,10 @@ function bindGallery() {
 /* ------------------------------------------------------------------- info */
 const sizeButtons = (key, current) =>
   `<div class="opt-group" role="radiogroup" aria-label="${esc(ui(key === 'size' ? 'size' : key === 'sizeH' ? 'hoodieSize' : 'sirwalSize'))}">${CONFIG.sizes
-    .map((s) => `<button type="button" class="opt opt--size" role="radio" aria-checked="${current === s}" data-set="${key}" data-value="${s}">${s}</button>`)
+    .map((s) => {
+      const out = key === 'size' && soldOut(product, s);
+      return `<button type="button" class="opt opt--size" role="radio" aria-checked="${current === s}" data-set="${key}" data-value="${s}" ${out ? `aria-disabled="true" title="${esc(ui('sizeSoldOut'))}"` : ''}>${s}</button>`;
+    })
     .join('')}</div>`;
 
 const statementButtons = (current, navigate) =>
@@ -278,11 +282,15 @@ function renderInfo() {
   host.innerHTML = `
     <p class="kicker">${esc(kicker)}</p>
     <h1 class="pdp-title">${esc(name)}</h1>
-    <p class="pdp-price num">${formatPrice(p.price)}</p>
+    <p class="pdp-price num">${p.compareAt && p.compareAt > p.price ? `<s class="p-was">${formatPrice(p.compareAt)}</s> ` : ''}${formatPrice(p.price)}${soldOut(p) ? ` <span class="tag" style="--tag-bg:var(--magenta);vertical-align:middle">${esc(ui('soldOut'))}</span>` : ''}</p>
     <p class="pdp-blurb">${esc(blurb)}</p>
     <div class="pdp-options">${options}</div>
     <div class="pdp-actions">
-      <button class="btn btn--block" type="button" data-add data-magnetic="0.15"><svg aria-hidden="true"><use href="#i-bag"/></svg><span>${esc(ui('addToBag'))} — ${formatPrice(p.price)}</span></button>
+      ${
+        soldOut(p)
+          ? `<button class="btn btn--block" type="button" disabled aria-disabled="true" style="opacity:.55;cursor:not-allowed"><span>${esc(ui('soldOutLong'))}</span></button>`
+          : `<button class="btn btn--block" type="button" data-add data-magnetic="0.15"><svg aria-hidden="true"><use href="#i-bag"/></svg><span>${esc(ui('addToBag'))} — ${formatPrice(p.price)}</span></button>`
+      }
       <a class="btn btn--ghost btn--block" href="studio.html?${encodeOutfit(state)}"><span>${esc(L('عدّلها في الاستوديو', 'Remix it in the studio'))}</span></a>
     </div>
     <p class="pdp-perk"><svg aria-hidden="true"><use href="#i-crown"/></svg><span>${esc(L('تجيك في صندوق التوقيع — مع مفاجأة داخل العلبة.', 'Ships in the signature box — with a surprise inside.'))}</span></p>
@@ -374,6 +382,10 @@ function bindInfo() {
       return;
     }
     const set = e.target.closest('[data-set]');
+    if (set?.getAttribute('aria-disabled') === 'true') {
+      toast(ui('sizeSoldOut'));
+      return;
+    }
     if (set) {
       const key = set.dataset.set;
       state[key] = set.dataset.value;
@@ -402,6 +414,10 @@ function bindInfo() {
 
 function add() {
   const p = product;
+  if (soldOut(p) || (p.type !== 'set' && state.size && soldOut(p, state.size))) {
+    toast(soldOut(p) ? ui('soldOutLong') : ui('sizeSoldOut'));
+    return;
+  }
   const missing = p.type === 'set' ? !state.sizeH || !state.sizeS : !state.size;
   if (missing) {
     toast(p.type === 'set' ? ui('pickSizes') : ui('pickSize'));
@@ -452,6 +468,12 @@ boot({
       renderAll();
       rewatch();
       ScrollTrigger.refresh();
+    });
+    // Price / stock changed in the owner dashboard → refresh the buy box in place.
+    window.addEventListener('catalog:change', () => {
+      const keep = window.scrollY;
+      renderInfo();
+      window.scrollTo(0, keep);
     });
     const mo = new MutationObserver(rewatch);
     mo.observe($('[data-info]'), { childList: true });

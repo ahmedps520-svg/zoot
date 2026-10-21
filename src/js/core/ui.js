@@ -2,6 +2,8 @@ import { gsap, lenis, lockScroll, reduceMotion, resplit, ScrollTrigger } from '.
 import { cart } from './cart.js';
 import { CONFIG } from '../data.js';
 import { applyLang, formatPrice, getLang, setLang, t, ui } from './i18n.js';
+import { publicApi } from '../backend/public.js';
+import { storeSettings, syncCatalog } from './store.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -216,6 +218,51 @@ function orderText(order) {
   ].join('\n');
 }
 
+const PAY_LABELS = {
+  cod: { ar: 'الدفع عند الاستلام', en: 'Cash on delivery' },
+  transfer: { ar: 'تحويل بنكي', en: 'Bank transfer' },
+  mada: { ar: 'مدى', en: 'mada' },
+  card: { ar: 'بطاقة ائتمانية', en: 'Credit card' },
+  applepay: { ar: 'Apple Pay', en: 'Apple Pay' },
+  stcpay: { ar: 'STC Pay', en: 'STC Pay' },
+};
+
+/** Shipping exactly like the server computes it (the server always has the final word). */
+const shippingFor = (subtotal) => {
+  const fee = Number(storeSettings.shipping_fee) || 0;
+  const free = Number(storeSettings.free_shipping_over) || 0;
+  return free > 0 && subtotal >= free ? 0 : fee;
+};
+
+/** Cart line → order item for the backend. */
+function toItem(l) {
+  const size = l.options?.find((o) => o.label?.en === 'Size')?.value;
+  return {
+    pid: l.pid,
+    qty: l.qty,
+    size: typeof size === 'string' ? size : null,
+    image: l.img || null,
+    options: (l.options || []).map(({ label, value }) => ({ label, value })),
+    meta: l.meta || null,
+  };
+}
+
+function checkoutError(err) {
+  const en = getLang() === 'en';
+  const msg = String(err?.message || err);
+  if (msg.startsWith('out_of_stock')) {
+    const [, pid, size] = msg.split(':');
+    const line = cart.lines.find((l) => l.pid === pid);
+    const name = line ? t(line.name) : '';
+    syncCatalog(true);
+    return en ? `Sorry — ${name}${size && size !== 'ONE' ? ` (${size})` : ''} just sold out. Remove it from your bag to continue.` : `للأسف ${name}${size && size !== 'ONE' ? ` (${size})` : ''} نفد للتو — احذفه من السلة وكمّل.`;
+  }
+  if (msg === 'invalid_phone') return en ? 'Check your mobile number.' : 'تأكد من رقم الجوال.';
+  if (msg === 'invalid_email') return en ? 'Check your email.' : 'تأكد من البريد.';
+  if (msg === 'invalid_address') return en ? 'Add your city and address.' : 'اكتب المدينة والعنوان.';
+  return en ? 'We could not send your order — please try again.' : 'ما قدرنا نرسل طلبك — جرّب مرة ثانية.';
+}
+
 function initCheckout() {
   const dialog = $('[data-checkout]');
   if (!dialog) return;
@@ -223,11 +270,24 @@ function initCheckout() {
   const msg = $('[data-form-msg]', form);
   const stepForm = $('[data-step="form"]', dialog);
   const stepDone = $('[data-step="done"]', dialog);
+  const en = () => getLang() === 'en';
+
+  const renderPay = () => {
+    const methods = (storeSettings.payment_methods || ['cod']).filter((m) => PAY_LABELS[m]);
+    const current = form.payment_method?.value || methods[0];
+    $('[data-pay-opts]', form).innerHTML = methods
+      .map((m) => `<label class="pay-opt"><input type="radio" name="payment_method" value="${m}" ${m === current ? 'checked' : ''} required><span>${esc(t(PAY_LABELS[m]))}</span></label>`)
+      .join('');
+    $('[data-pay-methods]', form).hidden = methods.length < 2;
+  };
 
   const renderSummary = () => {
+    const sub = cart.subtotal();
+    const ship = shippingFor(sub);
     $('[data-checkout-summary]', dialog).innerHTML =
       cart.lines.map((l) => `<div><span>${esc(t(l.name))} ×${l.qty}</span><span class="num">${formatPrice(l.price * l.qty)}</span></div>`).join('') +
-      `<div class="total"><span>${getLang() === 'en' ? 'Total' : 'المجموع'}</span><span class="num">${formatPrice(cart.subtotal())}</span></div>`;
+      `<div><span>${en() ? 'Shipping' : 'الشحن'}</span><span class="num">${ship ? formatPrice(ship) : en() ? 'Free' : 'مجاني'}</span></div>` +
+      `<div class="total"><span>${en() ? 'Total' : 'المجموع'}</span><span class="num">${formatPrice(sub + ship)}</span></div>`;
   };
 
   document.addEventListener('click', (e) => {
@@ -236,6 +296,8 @@ function initCheckout() {
       closeCart();
       stepForm.hidden = false;
       stepDone.hidden = true;
+      msg.textContent = '';
+      renderPay();
       renderSummary();
       setTimeout(() => {
         dialog.showModal();
@@ -246,6 +308,8 @@ function initCheckout() {
     const flip = e.target.closest('[data-flip]');
     if (flip) flip.setAttribute('aria-pressed', String(flip.getAttribute('aria-pressed') !== 'true'));
   });
+  window.addEventListener('catalog:change', () => dialog.open && !stepForm.hidden && (renderPay(), renderSummary()));
+  window.addEventListener('cart:change', () => dialog.open && !stepForm.hidden && renderSummary());
   dialog.addEventListener('close', () => lockScroll(false));
   dialog.addEventListener('click', (e) => {
     if (e.target === dialog) dialog.close();
@@ -265,46 +329,53 @@ function initCheckout() {
       return;
     }
     const data = Object.fromEntries(new FormData(form));
-    const order = {
-      no: `ZT-001-${Date.now().toString(36).slice(-5).toUpperCase()}`,
-      lines: cart.lines.map((l) => ({ ...l })),
-      total: cart.subtotal(),
-      currency: 'SAR',
-      customer: data,
-      lang: getLang(),
-      createdAt: new Date().toISOString(),
-    };
+    const lines = cart.lines.map((l) => ({ ...l }));
     const submit = $('button[type="submit"]', form);
     submit.classList.add('is-busy');
     msg.textContent = ui('sending');
+    let placed;
     try {
-      if (CONFIG.orderEndpoint) {
-        const res = await fetch(CONFIG.orderEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(order) });
-        if (!res.ok) throw new Error(String(res.status));
-      }
-    } catch {
+      const api = await publicApi();
+      placed = await api.placeOrder({
+        customer_name: data.name.trim(),
+        customer_phone: data.phone.trim(),
+        customer_email: data.email?.trim() || null,
+        city: data.city.trim(),
+        district: data.district?.trim() || null,
+        address: data.address.trim(),
+        payment_method: data.payment_method || storeSettings.payment_methods?.[0] || 'cod',
+        lang: getLang(),
+        items: lines.map(toItem),
+      });
+    } catch (err) {
+      console.error(err);
       submit.classList.remove('is-busy');
-      msg.textContent = getLang() === 'en' ? 'We could not send your order — please try again.' : 'ما قدرنا نرسل طلبك — جرّب مرة ثانية.';
+      msg.textContent = checkoutError(err);
       msg.classList.add('is-error');
       return;
     }
     submit.classList.remove('is-busy');
     msg.textContent = '';
+    const order = { no: placed.order_no, lines, total: Number(placed.total), customer: data };
     $('[data-order-no]', dialog).textContent = order.no;
+    $('[data-track-link]', dialog).href = `track.html?order=${encodeURIComponent(order.no)}`;
+    const bank = data.payment_method === 'transfer' && storeSettings.bank_details;
+    $('[data-bank]', dialog).hidden = !bank;
+    if (bank) $('[data-bank-text]', dialog).textContent = `${storeSettings.bank_details}\n\n${en() ? `Amount: ${formatPrice(order.total)} · Reference: ${order.no}` : `المبلغ: ${formatPrice(order.total)} · المرجع: ${order.no}`}`;
     const wa = $('[data-whatsapp-link]', dialog);
     if (CONFIG.whatsapp) {
       wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(orderText(order))}`;
       wa.hidden = false;
     } else wa.hidden = true;
-    $('[data-checkout-next]', dialog).textContent = CONFIG.whatsapp
-      ? getLang() === 'en'
-        ? 'Tap “Confirm on WhatsApp” to send us your order and we’ll confirm delivery.'
-        : 'اضغط «أكّد عبر واتساب» يوصلنا طلبك ونأكّد معك التوصيل.'
-      : getLang() === 'en'
-        ? 'Flip the card — the surprise that comes inside every box.'
-        : 'اقلب البطاقة — هذي المفاجأة اللي تجيك داخل كل علبة.';
+    $('[data-checkout-next]', dialog).textContent = data.email
+      ? en()
+        ? `We’ve emailed your confirmation to ${data.email}. Follow every step on the tracking page.`
+        : `أرسلنا التأكيد على ${data.email}. وتقدر تتابع كل خطوة من صفحة التتبّع.`
+      : en()
+        ? 'Save your order number — you can follow every step on the tracking page with your mobile number.'
+        : 'احفظ رقم طلبك — تقدر تتابع كل خطوة من صفحة التتبّع برقم جوالك.';
     try {
-      localStorage.setItem('zooot-last-order', JSON.stringify(order));
+      localStorage.setItem('zooot-last-order', JSON.stringify({ order_no: order.no, phone: data.phone.trim(), at: new Date().toISOString() }));
     } catch {
       /* ignore */
     }
@@ -334,16 +405,14 @@ function initNewsletter() {
       }
       msg.textContent = ui('sending');
       try {
-        if (CONFIG.newsletterEndpoint) {
-          const res = await fetch(CONFIG.newsletterEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ email: input.value.trim() }) });
-          if (!res.ok) throw new Error(String(res.status));
-        }
-        msg.textContent = ui('joined');
+        const api = await publicApi();
+        const res = await api.subscribe({ email: input.value.trim(), lang: getLang(), source: form.dataset.source || 'footer' });
+        msg.textContent = res?.is_new === false ? (getLang() === 'en' ? 'You’re already on the list ✦' : 'أنت أصلًا من الزوووطة ✦') : ui('joined');
         form.reset();
         if (!reduceMotion) gsap.fromTo(msg, { scale: 0.8 }, { scale: 1, ease: 'back.out(3)', duration: 0.5 });
-      } catch {
+      } catch (err) {
         msg.classList.add('is-error');
-        msg.textContent = getLang() === 'en' ? 'Something went wrong — try again.' : 'صار خطأ — جرّب مرة ثانية.';
+        msg.textContent = String(err?.message).startsWith('invalid_email') ? ui('emailInvalid') : getLang() === 'en' ? 'Something went wrong — try again.' : 'صار خطأ — جرّب مرة ثانية.';
       }
     });
   });
@@ -380,6 +449,7 @@ function initMisc() {
 
 export function initUI() {
   applyLang();
+  syncCatalog();
   initHeader();
   initMenu();
   initCart();

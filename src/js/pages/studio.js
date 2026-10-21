@@ -117,6 +117,7 @@ async function share() {
 }
 
 function add() {
+  if (CONFIG.customSoldOut) return toast(ui('soldOutLong'));
   if (!state.sizeH || !state.sizeS) {
     toast(ui('pickSizes'));
     const step = $('[data-group="sizeH"]').closest('.step');

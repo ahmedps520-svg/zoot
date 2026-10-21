@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const root = import.meta.dirname;
-const pages = ['index', 'shop', 'product', 'studio', 'story', '404'];
+const pages = ['index', 'shop', 'product', 'studio', 'story', 'track', '404'];
 
 /**
  * Tiny HTML include system: `<!-- @include header.html -->` is replaced with

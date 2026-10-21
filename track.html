@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>تتبّع طلبك — زوووط ZOOOT</title>
+  <meta name="description" content="تابع طلبك من زوووط خطوة بخطوة: رقم الطلب ورقم الجوال وبس.">
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="تتبّع طلبك — زوووط ZOOOT">
+  <!-- @include head.html -->
+</head>
+<body data-page="track" data-title-en="Track your order — ZOOOT">
+  <!-- @include sprite-logo.html -->
+  <!-- @include sprite-icons.html -->
+  <!-- @include loader.html -->
+  <!-- @include header.html -->
+
+  <main id="main" class="track">
+    <section class="track-hero theme-dark">
+      <div class="track-dots" aria-hidden="true"></div>
+      <div class="container track-hero-inner">
+        <p class="kicker" data-reveal>TRACK · DROP 001</p>
+        <h1 class="track-title" data-en="Where’s my<br>ZOOOT?">وين وصل<br>طلبي؟</h1>
+        <p class="lead" data-reveal data-en="Your order number and the mobile you ordered with — that’s all we need.">رقم الطلب ورقم الجوال اللي طلبت فيه — وبس.</p>
+      </div>
+    </section>
+
+    <section class="container track-body">
+      <form class="track-form" data-track-form novalidate>
+        <div class="field">
+          <label for="t-order" data-en="Order number">رقم الطلب</label>
+          <input id="t-order" name="order" required placeholder="ZT-1001" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="t-phone" data-en="Mobile">رقم الجوال</label>
+          <input id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="^\+?[0-9\s]{9,15}$" placeholder="05X XXX XXXX" dir="ltr">
+        </div>
+        <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
+        <button class="btn btn--block" type="submit" data-magnetic><span data-en="Track it">تتبّع الطلب</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      </form>
+
+      <div class="track-result" data-track-result hidden aria-live="polite"></div>
+
+      <div class="track-unsub" data-unsub hidden>
+        <p class="kicker">NEWSLETTER</p>
+        <h2 class="h2" data-unsub-title data-en="Leaving the ZOOOTA?">بتطلع من الزوووطة؟</h2>
+        <p class="lead" data-unsub-text data-en="One tap and we’ll stop sending you drop news. You can always join again from the footer.">ضغطة وحدة ونوقف نرسل لك أخبار الإصدارات. وتقدر ترجع تشترك متى ما بغيت من أسفل الموقع.</p>
+        <div class="track-unsub-actions">
+          <button class="btn" type="button" data-unsub-go><span data-en="Unsubscribe">إلغاء الاشتراك</span></button>
+          <a class="btn btn--ghost" href="index.html"><span data-en="Stay, take me home">خلّني، رجعني للرئيسية</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- @include footer.html -->
+  <!-- @include cart.html -->
+  <script type="module" src="/src/js/pages/track.js"></script>
+</body>
+</html>
