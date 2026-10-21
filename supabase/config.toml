@@ -1,0 +1,14 @@
+# Supabase CLI config (only the parts this project customises).
+project_id = "zooot"
+
+# Public storefront endpoints: they accept the publishable/anon key and do their
+# own validation, so the gateway JWT check is off.
+[functions.place-order]
+verify_jwt = false
+
+[functions.subscribe]
+verify_jwt = false
+
+# Owner-only: the function verifies the caller's session and admin role itself.
+[functions.admin-email]
+verify_jwt = false

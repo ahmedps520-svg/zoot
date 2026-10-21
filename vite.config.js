@@ -31,7 +31,10 @@ export default defineConfig({
     target: 'es2020',
     assetsInlineLimit: 0,
     rollupOptions: {
-      input: Object.fromEntries(pages.map((p) => [p, resolve(root, `${p}.html`)])),
+      input: {
+        ...Object.fromEntries(pages.map((p) => [p, resolve(root, `${p}.html`)])),
+        admin: resolve(root, 'admin/index.html'),
+      },
     },
   },
 });
