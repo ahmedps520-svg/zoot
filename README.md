@@ -91,7 +91,10 @@ Demo courier login: `courier1demo@zooot.sa` (the password you chose). With Supab
 - **Create the account**: `npm run create-admin -- --courier driver@example.com "Salem" 05XXXXXXXX`, or create the user in Supabase and add it under **Settings → Couriers**.
 - **Access**: couriers only see delivery details. All their actions go through locked-down database functions (`courier_*`), and every step lands in the order's timeline.
 
-### Demo mode vs live mode
+### Live mode (current) and demo mode
+
+The site, dashboard and courier app run on the ZOOOT Supabase project (`src/js/backend/config.js`). Build or run with
+`VITE_DEMO=1` to use the in-browser demo instead.
 
 | | Demo (default) | Live (Supabase connected) |
 | --- | --- | --- |
@@ -99,9 +102,9 @@ Demo courier login: `courier1demo@zooot.sa` (the password you chose). With Supab
 | Owner login | Demo account, stored only as a hash; keeps casual visitors out but **is not real security** | Supabase Auth, with every table locked down by Row Level Security |
 | Emails | Rendered into the **Emails → Log** preview, nothing is sent | Sent by **Resend** |
 
-The demo owner login is `admindemo@zooot.sa` (the password you chose). It stops working once Supabase is connected; owners then sign in with their Supabase accounts.
+Live accounts: owner `admindemo@zooot.sa`, courier `courier1demo@zooot.sa` (the passwords you chose; change them in the dashboard and add your real accounts in Supabase → Authentication → Users).
 
-### Going live: Supabase + Resend (≈20 minutes, free tiers)
+### Supabase + Resend setup (Supabase is done — this is the reference for a new project)
 
 1. **Create a project** at [supabase.com](https://supabase.com).
 2. **Database**: open the SQL editor and run, in order:

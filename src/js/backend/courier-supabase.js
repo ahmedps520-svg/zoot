@@ -54,7 +54,7 @@ export async function act(orderId, action, { eta = null, text = null, collected 
   const { data, error } = await sb.rpc('courier_action', { p_order: orderId, p_action: action, p_eta: eta, p_text: text, p_collected: collected });
   fail(error);
   // Let the customer know by email when the owner has status emails on (sent server-side).
-  if (action === 'start' || action === 'delivered') sb.functions.invoke('admin-email', { body: { action: 'status', order_id: orderId } }).catch(() => {});
+  if ((action === 'start' || action === 'delivered') && data?.has_email) sb.functions.invoke('admin-email', { body: { action: 'status', order_id: orderId } }).catch(() => {});
   return data;
 }
 

@@ -73,7 +73,7 @@ as $$
     'id', o.id, 'order_no', o.order_no, 'status', o.status, 'created_at', o.created_at,
     'customer_name', o.customer_name, 'customer_phone', o.customer_phone,
     'city', o.city, 'district', o.district, 'address', o.address, 'customer_note', o.customer_note,
-    'lang', o.lang, 'payment_method', o.payment_method, 'payment_status', o.payment_status,
+    'lang', o.lang, 'has_email', o.customer_email is not null, 'payment_method', o.payment_method, 'payment_status', o.payment_status,
     'total', o.total, 'balance', greatest(o.total - o.paid_amount, 0),
     'courier_id', o.courier_id, 'mine', o.courier_id = auth.uid(),
     'delivery_eta', o.delivery_eta, 'delivery_location', o.delivery_location,
@@ -304,3 +304,16 @@ begin
   end if;
 exception when duplicate_object then null;
 end $$;
+
+-- ---------------------------------------------------------------- hardening
+-- Supabase grants EXECUTE on new functions to anon/authenticated by default.
+-- Internal helpers and trigger functions must never be callable through the API.
+revoke execute on function public.recalc_order(uuid) from public, anon, authenticated;
+revoke execute on function public.adjust_stock(uuid, int) from public, anon, authenticated;
+revoke execute on function public.courier_order_json(public.orders) from anon, authenticated;
+revoke execute on function public.order_children_changed() from public, anon, authenticated;
+revoke execute on function public.orders_audit() from public, anon, authenticated;
+revoke execute on function public.orders_before_delete() from public, anon, authenticated;
+revoke execute on function public.touch_updated_at() from public, anon, authenticated;
+revoke execute on function public.orders_derive() from public, anon, authenticated;
+revoke execute on function public.orders_delivery_times() from public, anon, authenticated;

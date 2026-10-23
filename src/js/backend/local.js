@@ -862,6 +862,7 @@ const courierView = (o, me) => ({
   address: o.address,
   customer_note: o.customer_note,
   lang: o.lang,
+  has_email: Boolean(o.customer_email),
   payment_method: o.payment_method,
   payment_status: o.payment_status,
   total: o.total,

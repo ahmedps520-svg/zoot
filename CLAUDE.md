@@ -6,8 +6,9 @@ Vite multi-page site, deployed to GitHub Pages by `.github/workflows/deploy.yml`
 - Storefront: `*.html` + `src/js/` (checkout, newsletter, live catalogue in `core/store.js`, tracking in `pages/track.js`)
 - Owner dashboard (PWA): `admin/` + `src/admin/`
 - Courier app (PWA): `courier/` + `src/courier/`
-- Backend switch: `src/js/backend/config.js` — `MODE` is `supabase` when `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
-  are set at build time, otherwise `demo` (everything in the visitor's localStorage).
+- Backend switch: `src/js/backend/config.js` — **live**: defaults to the ZOOOT Supabase project (public URL +
+  publishable key). `VITE_DEMO=1` switches to demo mode (localStorage only) for trying changes without real data;
+  the Playwright checks in this repo's history ran against `VITE_DEMO=1 npx vite`.
 - Supabase: `supabase/migrations/*.sql` (schema, RLS, RPCs), `supabase/seed.sql` (products), edge functions in
   `supabase/functions/` (`place-order`, `subscribe`, `admin-email`, all `verify_jwt = false`, they check auth themselves).
 
@@ -18,22 +19,20 @@ Commands: `npm run dev`, `npm run build`, `npm run seed:sql`, `PGHOST=… PGUSER
 Explain things in chat in plain steps. Never ask for passwords, API keys or tokens in chat: the owner types those
 into Supabase / GitHub / Resend settings pages themselves.
 
-## Going live on Supabase (project ref `ffwjxvrporoittxrllru`)
+## Supabase (project ref `ffwjxvrporoittxrllru`) — live since 2026-10-23
 
-The site is still in demo mode. When the Supabase connector is available in the session:
-
-1. Apply `supabase/migrations/20261021000000_owner_dashboard.sql`, then `supabase/migrations/20261021010000_couriers.sql`,
-   then run `supabase/seed.sql`. Check with a quick select that 21 products exist.
-2. Deploy the edge functions `place-order`, `subscribe`, `admin-email` (each imports files from `supabase/functions/_shared/`),
-   with JWT verification off.
-3. Ask the owner to create their own logins in the Supabase dashboard (Authentication → Users → Add user, auto-confirm)
-   for themselves, their partner and each courier. Then make owners admins
-   (`insert into public.admins (user_id, email) select id, email from auth.users where email = '…'`) and couriers
-   couriers (`select public.admin_add_courier('email', 'Name', 'phone')` as an admin, or insert into `public.couriers`).
-4. Get the project URL and the publishable/anon key (both public by design; RLS protects the data) and make them the
-   defaults in `src/js/backend/config.js` so the build switches to Supabase mode (repository variables still override).
-   Only do this after steps 1–3, otherwise the live store breaks. Build, push `main`, and verify on the live site:
-   owner login, place an order from the shop, see it live in the dashboard, track it, courier login + delivery.
-5. Emails later (needs the zooot.sa domain verified in Resend): the owner adds the edge-function secrets
-   `RESEND_API_KEY`, `MAIL_FROM` (e.g. `ZOOOT <orders@zooot.sa>`), `SITE_URL`, `OWNER_EMAIL` in the Supabase dashboard
-   (Edge Functions → Secrets). Until then the functions skip sending and log it.
+- Schema = `supabase/migrations/*.sql` + `supabase/seed.sql` (21 products). On the live project they were applied in
+  pieces through the Supabase connector: statements like `drop ... if exists` and `delete` wait for the owner's
+  confirmation and time out after 60 s, so on a fresh object leave them out, and remove data as the owner via the
+  REST API (RLS lets admins delete) instead of `delete` through the connector.
+- Edge functions `place-order`, `subscribe`, `admin-email` are deployed with JWT verification off (they check auth
+  themselves). The deployed copies import `./_shared/…` (bundled per function) instead of the repo's `../_shared/…`.
+- Accounts: owner `admindemo@zooot.sa`, courier `courier1demo@zooot.sa` (display name «مندوب زوووط»). The owner chose
+  these test passwords in chat; suggest changing them (dashboard → Settings → Change password) and adding real
+  owner/courier accounts (Supabase → Authentication → Users → Add user, then `public.admins` /
+  `public.admin_add_courier`).
+- Emails are logged as `skipped` until the owner adds the edge-function secrets `RESEND_API_KEY`, `MAIL_FROM`
+  (e.g. `ZOOOT <orders@zooot.sa>`), `SITE_URL`, `OWNER_EMAIL` in Supabase (Edge Functions → Secrets) — needs the
+  zooot.sa domain verified in Resend first. Never handle those values in chat.
+- Supabase grants EXECUTE on new functions to `anon`/`authenticated` by default: revoke it explicitly on internal
+  helpers and trigger functions (see the security notes in the migrations).

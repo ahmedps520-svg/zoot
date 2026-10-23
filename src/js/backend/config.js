@@ -1,18 +1,24 @@
 /**
  * Backend selection.
  *
- *  - "supabase": set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (the public anon /
- *    publishable key — safe in the browser; Row Level Security protects the data).
- *    Orders, payments and stock are shared, live, and protected by real owner logins.
- *  - "demo" (default): everything lives in this browser's localStorage so the
- *    dashboard can be tried before any backend exists. Tabs stay in sync live.
+ *  - "supabase" (live): the ZOOOT Supabase project below. Its URL and publishable
+ *    key are public by design — Row Level Security protects the data. Orders,
+ *    payments and stock are shared, live, and protected by real owner logins.
+ *    VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (or _PUBLISHABLE_KEY) override it.
+ *  - "demo": everything lives in this browser's localStorage. Build or run with
+ *    VITE_DEMO=1 to use it (handy for trying changes without touching real data).
  */
 const env = import.meta.env || {};
 
-export const SUPABASE_URL = (env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-export const SUPABASE_KEY = env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const LIVE = {
+  url: 'https://ffwjxvrporoittxrllru.supabase.co',
+  key: 'sb_publishable_L3INZ93lx6-JQNPfFh55wA_NoeJ1XJr',
+};
+
+export const SUPABASE_URL = (env.VITE_SUPABASE_URL || LIVE.url).replace(/\/$/, '');
+export const SUPABASE_KEY = env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || LIVE.key;
 export const VAPID_PUBLIC_KEY = env.VITE_VAPID_PUBLIC_KEY || '';
-export const MODE = SUPABASE_URL && SUPABASE_KEY ? 'supabase' : 'demo';
+export const MODE = env.VITE_DEMO === '1' || !SUPABASE_URL || !SUPABASE_KEY ? 'demo' : 'supabase';
 
 /**
  * Demo owner login (demo mode only — ignored once Supabase is connected).

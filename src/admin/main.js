@@ -220,8 +220,11 @@ function navLink(n) {
 
 /* ------------------------------------------------------------------ live */
 let reloadTimer = null;
+// New orders are announced after the reload, so the alert shows the final total
+// (the INSERT event fires before the items are priced).
+const pendingNew = new Map();
 function onLive(change) {
-  if (change.table === 'orders' && change.type === 'INSERT' && change.record && !store.selfCreated.has(change.record.id)) notifyNewOrder(change.record);
+  if (change.table === 'orders' && change.type === 'INSERT' && change.record && !store.selfCreated.has(change.record.id)) pendingNew.set(change.record.id, change.record);
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(async () => {
     const which =
@@ -238,7 +241,9 @@ function onLive(change) {
                 : ['couriers', 'courier_locations'].includes(change.table)
                   ? ['couriers']
                   : ['orders', 'products', 'emails'];
-    await reload(which);
+    await reload(pendingNew.size ? undefined : which);
+    for (const [id, rec] of pendingNew) notifyNewOrder(store.orders.find((o) => o.id === id) || rec);
+    pendingNew.clear();
     // Location pings only refresh screens that show couriers.
     if (change.table === 'courier_locations' && !/^#\/(orders\/|settings)/.test(location.hash)) return;
     render({ soft: true });
