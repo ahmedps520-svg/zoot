@@ -5,6 +5,8 @@ import { sendMail } from '../_shared/mail.ts';
 import { notifyOwners } from '../_shared/push.ts';
 import { orderConfirmationEmail, ownerNewOrderEmail, money } from '../_shared/email-templates.js';
 
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -22,8 +24,16 @@ Deno.serve(async (req) => {
   const { data, error } = await db.rpc('create_order', { p: input });
   if (error) return json({ error: error.message }, error.message.startsWith('out_of_stock') ? 409 : 400);
 
-  const order = await loadOrder(db, data.id);
-  const settings = await getSettings(db);
+  // Answer the shopper as soon as the order is saved; emails and push go out in the background.
+  const notify = notifyNewOrder(db, data.id).catch((e) => console.error('place-order notify', e));
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(notify);
+  else await notify;
+
+  return json({ id: data.id, order_no: data.order_no, total: data.total, subtotal: data.subtotal, shipping: data.shipping });
+});
+
+async function notifyNewOrder(db: ReturnType<typeof serviceClient>, id: string) {
+  const [order, settings] = await Promise.all([loadOrder(db, id), getSettings(db)]);
   const owner = (settings.notifications.owner_email as string) || Deno.env.get('OWNER_EMAIL');
   const dashboardUrl = `${SITE_URL}/admin/#/orders/${order.order_no}`;
   const jobs: Promise<unknown>[] = [];
@@ -49,6 +59,4 @@ Deno.serve(async (req) => {
     }),
   );
   await Promise.allSettled(jobs);
-
-  return json({ id: order.id, order_no: order.order_no, total: order.total, subtotal: order.subtotal, shipping: order.shipping });
-});
+}

@@ -63,7 +63,38 @@ export async function ping({ lat, lng, accuracy = null, heading = null, speed = 
   fail(error);
 }
 
-/** Couriers can't subscribe to order tables (RLS) — the app polls instead. */
-export function live() {
-  return () => {};
+/**
+ * Couriers can't read the order tables (RLS), so Postgres Changes can't reach them. The database
+ * pings the public topic `courier:<user id>` whenever one of their orders changes (live_tracking
+ * migration); the ping carries no data and the app refetches through courier_orders.
+ */
+export function live(cb) {
+  const channels = [];
+  let stopped = false;
+  let timer = null;
+  // Several pings in a row (status + payment + …) become one refresh.
+  const ping = (change) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => cb(change), 300);
+  };
+  sb.auth.getSession().then(({ data }) => {
+    const uid = data.session?.user?.id;
+    if (!uid || stopped) return;
+    // `courier:<id>`: orders assigned to me · `couriers`: the shared pool of ready, unassigned orders.
+    for (const topic of [`courier:${uid}`, 'couriers']) {
+      let joined = 0;
+      channels.push(
+        sb
+          .channel(topic)
+          .on('broadcast', { event: 'changed' }, () => ping({ table: 'orders', type: 'UPDATE' }))
+          // Pings sent while the phone was offline are lost: catch up after a reconnect.
+          .subscribe((status) => status === 'SUBSCRIBED' && joined++ && ping({ table: '*', type: 'SYNC' })),
+      );
+    }
+  });
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+    channels.forEach((ch) => sb.removeChannel(ch));
+  };
 }

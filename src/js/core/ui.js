@@ -4,6 +4,7 @@ import { CONFIG } from '../data.js';
 import { applyLang, formatPrice, getLang, setLang, t, ui } from './i18n.js';
 import { publicApi } from '../backend/public.js';
 import { storeSettings, syncCatalog } from './store.js';
+import { rememberOrder } from './orders.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -218,6 +219,11 @@ function orderText(order) {
   ].join('\n');
 }
 
+const PAY_HINTS = {
+  cod: { ar: 'ادفع للمندوب لما يوصلك طلبك', en: 'Pay the courier when your order arrives', icon: 'i-cash' },
+  transfer: { ar: 'تظهر لك بيانات الحساب بعد تثبيت الطلب', en: 'Bank details appear right after you place the order', icon: 'i-bank' },
+};
+
 const PAY_LABELS = {
   cod: { ar: 'الدفع عند الاستلام', en: 'Cash on delivery' },
   transfer: { ar: 'تحويل بنكي', en: 'Bank transfer' },
@@ -272,22 +278,45 @@ function initCheckout() {
   const stepDone = $('[data-step="done"]', dialog);
   const en = () => getLang() === 'en';
 
+  // Bank transfer only makes sense once the owner has added the account details.
+  const payMethods = () =>
+    (storeSettings.payment_methods || ['cod']).filter((m) => PAY_LABELS[m] && (m !== 'transfer' || String(storeSettings.bank_details || '').trim()));
+
   const renderPay = () => {
-    const methods = (storeSettings.payment_methods || ['cod']).filter((m) => PAY_LABELS[m]);
-    const current = form.payment_method?.value || methods[0];
+    const all = (storeSettings.payment_methods || ['cod']).filter((m) => PAY_LABELS[m]);
+    const methods = payMethods().length ? payMethods() : all.length ? all : ['cod'];
+    const current = methods.includes(form.payment_method?.value) ? form.payment_method.value : methods[0];
     $('[data-pay-opts]', form).innerHTML = methods
-      .map((m) => `<label class="pay-opt"><input type="radio" name="payment_method" value="${m}" ${m === current ? 'checked' : ''} required><span>${esc(t(PAY_LABELS[m]))}</span></label>`)
+      .map((m) => {
+        const hint = PAY_HINTS[m];
+        return `<label class="pay-opt"><input type="radio" name="payment_method" value="${m}" ${m === current ? 'checked' : ''} required><span>${
+          hint ? `<svg aria-hidden="true"><use href="#${hint.icon}"/></svg>` : ''
+        }<b>${esc(t(PAY_LABELS[m]))}</b>${hint ? `<small>${esc(t(hint))}</small>` : ''}</span></label>`;
+      })
       .join('');
-    $('[data-pay-methods]', form).hidden = methods.length < 2;
+    $('[data-trust-cod]', dialog).hidden = !methods.includes('cod');
   };
 
   const renderSummary = () => {
     const sub = cart.subtotal();
     const ship = shippingFor(sub);
-    $('[data-checkout-summary]', dialog).innerHTML =
-      cart.lines.map((l) => `<div><span>${esc(t(l.name))} ×${l.qty}</span><span class="num">${formatPrice(l.price * l.qty)}</span></div>`).join('') +
+    const n = cart.count();
+    $('[data-checkout-summary]', dialog).innerHTML = `
+      <p class="co-review-head"><b>${en() ? 'Your order' : 'طلبك'}</b><span>${en() ? `${n} ${n === 1 ? 'piece' : 'pieces'}` : n === 1 ? 'قطعة وحدة' : n === 2 ? 'قطعتين' : n <= 10 ? `${n} قطع` : `${n} قطعة`}</span></p>
+      <ul class="co-lines">${cart.lines
+        .map(
+          (l) => `<li>
+            <span class="co-line-img"${l.imgBg ? ` style="background:${esc(l.imgBg)}"` : ''}>${l.img ? `<img src="${esc(l.img)}" alt="" loading="lazy">` : ''}${l.qty > 1 ? `<i class="num">${l.qty}</i>` : ''}</span>
+            <span class="co-line-name"><b>${esc(t(l.name))}</b><small>${esc((l.options || []).map((o) => (typeof o.value === 'object' ? t(o.value) : o.value)).join(' · '))}</small></span>
+            <span class="num">${formatPrice(l.price * l.qty)}</span>
+          </li>`,
+        )
+        .join('')}</ul>`;
+    $('[data-checkout-totals]', dialog).innerHTML =
+      `<div><span>${en() ? 'Subtotal' : 'المجموع الفرعي'}</span><span class="num">${formatPrice(sub)}</span></div>` +
       `<div><span>${en() ? 'Shipping' : 'الشحن'}</span><span class="num">${ship ? formatPrice(ship) : en() ? 'Free' : 'مجاني'}</span></div>` +
-      `<div class="total"><span>${en() ? 'Total' : 'المجموع'}</span><span class="num">${formatPrice(sub + ship)}</span></div>`;
+      `<div class="total"><span>${en() ? 'Total' : 'الإجمالي'}</span><span class="num">${formatPrice(sub + ship)}</span></div>`;
+    $('[data-co-total]', form).textContent = formatPrice(sub + ship);
   };
 
   document.addEventListener('click', (e) => {
@@ -299,6 +328,7 @@ function initCheckout() {
       msg.textContent = '';
       renderPay();
       renderSummary();
+      publicApi().then((api) => api.warmUp?.('place-order'));
       setTimeout(() => {
         dialog.showModal();
         lockScroll(true);
@@ -309,6 +339,7 @@ function initCheckout() {
     if (flip) flip.setAttribute('aria-pressed', String(flip.getAttribute('aria-pressed') !== 'true'));
   });
   window.addEventListener('catalog:change', () => dialog.open && !stepForm.hidden && (renderPay(), renderSummary()));
+  window.addEventListener('langchange', () => dialog.open && !stepForm.hidden && (renderPay(), renderSummary()));
   window.addEventListener('cart:change', () => dialog.open && !stepForm.hidden && renderSummary());
   dialog.addEventListener('close', () => lockScroll(false));
   dialog.addEventListener('click', (e) => {
@@ -319,8 +350,10 @@ function initCheckout() {
     if (f?.classList.contains('is-invalid') && e.target.checkValidity()) f.classList.remove('is-invalid');
   });
 
+  let sending = false;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (sending) return; // a second tap while the first is on its way
     msg.classList.remove('is-error');
     if (!validate(form)) {
       msg.textContent = ui('invalid');
@@ -331,8 +364,23 @@ function initCheckout() {
     const data = Object.fromEntries(new FormData(form));
     const lines = cart.lines.map((l) => ({ ...l }));
     const submit = $('button[type="submit"]', form);
+    sending = true;
     submit.classList.add('is-busy');
-    msg.textContent = ui('sending');
+    form.classList.add('is-sending');
+    form.setAttribute('aria-busy', 'true');
+    // Keep the shopper informed while the server reserves stock (a cold start can take a few seconds).
+    const progress = [
+      [0, en() ? 'Placing your order securely…' : 'نثبّت طلبك بأمان…'],
+      [3500, en() ? 'Checking stock and reserving your pieces…' : 'نتأكد من المخزون ونحجز قطعك…'],
+      [9000, en() ? 'Almost there — please keep this page open.' : 'لحظات بس — خلّ الصفحة مفتوحة.'],
+    ].map(([ms, text]) => setTimeout(() => (msg.textContent = text), ms));
+    const settle = () => {
+      progress.forEach(clearTimeout);
+      sending = false;
+      submit.classList.remove('is-busy');
+      form.classList.remove('is-sending');
+      form.removeAttribute('aria-busy');
+    };
     let placed;
     try {
       const api = await publicApi();
@@ -343,18 +391,18 @@ function initCheckout() {
         city: data.city.trim(),
         district: data.district?.trim() || null,
         address: data.address.trim(),
-        payment_method: data.payment_method || storeSettings.payment_methods?.[0] || 'cod',
+        payment_method: data.payment_method || payMethods()[0] || 'cod',
         lang: getLang(),
         items: lines.map(toItem),
       });
     } catch (err) {
       console.error(err);
-      submit.classList.remove('is-busy');
+      settle();
       msg.textContent = checkoutError(err);
       msg.classList.add('is-error');
       return;
     }
-    submit.classList.remove('is-busy');
+    settle();
     msg.textContent = '';
     const order = { no: placed.order_no, lines, total: Number(placed.total), customer: data };
     $('[data-order-no]', dialog).textContent = order.no;
@@ -367,18 +415,11 @@ function initCheckout() {
       wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(orderText(order))}`;
       wa.hidden = false;
     } else wa.hidden = true;
-    $('[data-checkout-next]', dialog).textContent = data.email
-      ? en()
-        ? `We’ve emailed your confirmation to ${data.email}. Follow every step on the tracking page.`
-        : `أرسلنا التأكيد على ${data.email}. وتقدر تتابع كل خطوة من صفحة التتبّع.`
-      : en()
-        ? 'Save your order number — you can follow every step on the tracking page with your mobile number.'
-        : 'احفظ رقم طلبك — تقدر تتابع كل خطوة من صفحة التتبّع برقم جوالك.';
-    try {
-      localStorage.setItem('zooot-last-order', JSON.stringify({ order_no: order.no, phone: data.phone.trim(), at: new Date().toISOString() }));
-    } catch {
-      /* ignore */
-    }
+    // Emails only go out once Resend is set up, so promise what's always true: live tracking on this device.
+    $('[data-checkout-next]', dialog).textContent = en()
+      ? 'Your order is saved on this device — follow it live from “My orders”, no typing needed.'
+      : 'طلبك محفوظ على هذا الجهاز — تابعه مباشر من «طلباتي» بدون ما تكتب شي.';
+    rememberOrder(order.no, data.phone.trim());
     cart.clear();
     form.reset();
     stepForm.hidden = true;

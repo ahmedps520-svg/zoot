@@ -256,6 +256,8 @@ export function runLoader() {
   const loader = document.querySelector('[data-loader]');
   const wipe = document.querySelector('[data-wipe]');
   const done = () => html.classList.add('wipe-done');
+  // GSAP reads the CSS translateY(100%) as a pixel `y` and adds every later yPercent
+  // on top of it (the wipe then parks over the page), so pin y to 0 on first touch.
 
   if (!html.classList.contains('is-loading') || !loader) {
     // Regular navigation: lift the yellow wipe that covers the page.
@@ -264,7 +266,7 @@ export function runLoader() {
         done();
         return resolve();
       }
-      gsap.set(wipe, { yPercent: 0 });
+      gsap.set(wipe, { y: 0, yPercent: 0 });
       done();
       gsap.to(wipe, { yPercent: -100, duration: 0.85, ease: 'expo.inOut', delay: 0.05, onComplete: resolve });
       setTimeout(resolve, 450); // start page intros while the wipe is still moving
@@ -298,7 +300,7 @@ export function runLoader() {
       .set(loader.querySelector('.loader-dots'), { opacity: 0 })
       .add(() => resolve(), '-=0.1')
       .to(panels, { yPercent: -100, duration: 0.8, ease: 'expo.inOut', stagger: 0.07 });
-    if (wipe) gsap.set(wipe, { yPercent: 100 });
+    if (wipe) gsap.set(wipe, { y: 0, yPercent: 100 });
   });
 }
 

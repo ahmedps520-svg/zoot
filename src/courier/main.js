@@ -538,10 +538,12 @@ function renderLogin() {
 
 /* ------------------------------------------------------------------ boot */
 let pollTimer = null;
+let stopLive = null;
 function enter() {
   paint();
   refresh();
-  state.api.live?.((c) => ['orders', 'payments', '*'].includes(c.table) && refresh({ quiet: true }));
+  stopLive?.();
+  stopLive = state.api.live?.((c) => ['orders', 'payments', '*'].includes(c.table) && refresh({ quiet: true }));
   clearInterval(pollTimer);
   pollTimer = setInterval(() => !document.hidden && refresh({ quiet: true }), 20000);
   document.addEventListener('visibilitychange', () => !document.hidden && refresh({ quiet: true }));

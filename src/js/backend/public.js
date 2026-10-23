@@ -37,6 +37,39 @@ async function fn(name, body) {
   return data;
 }
 
+/**
+ * Listen for the database's "changed" pings on a public Realtime topic (see the live_tracking
+ * migration). The realtime client is only downloaded by pages that call this. onPing also fires
+ * after a reconnect, since pings sent while offline are lost.
+ */
+let realtime;
+function watchTopic(topic, onPing) {
+  let ch = null;
+  let stopped = false;
+  realtime ||= import('@supabase/realtime-js').then(
+    ({ RealtimeClient }) => new RealtimeClient(`${SUPABASE_URL.replace(/^http/, 'ws')}/realtime/v1`, { params: { apikey: SUPABASE_KEY } }),
+  );
+  realtime
+    .then((client) => {
+      if (stopped) return;
+      let joined = 0;
+      ch = client
+        .channel(topic)
+        .on('broadcast', { event: 'changed' }, (m) => onPing(m.payload || {}))
+        .subscribe((status) => status === 'SUBSCRIBED' && joined++ && onPing({ reconnected: true }));
+    })
+    .catch(() => {});
+  return () => {
+    stopped = true;
+    if (ch) realtime.then((client) => client.removeChannel(ch));
+  };
+}
+
+/** Boot the checkout function while the shopper fills the form (cold starts take a few seconds). */
+function warmUp(name) {
+  fetch(`${SUPABASE_URL}/functions/v1/${name}`, { method: 'OPTIONS', headers: headers() }).catch(() => {});
+}
+
 const remote = {
   mode: 'supabase',
   catalog: () => rest('/rest/v1/products?select=*&active=eq.true&order=sort'),
@@ -46,6 +79,8 @@ const remote = {
   trackOrder: (orderNo, phone) => rpc('track_order', { p_order_no: orderNo, p_phone: phone }),
   unsubscribe: (token) => rpc('unsubscribe', { p_token: token }),
   onChange: () => () => {},
+  watchTopic,
+  warmUp,
 };
 
 let demo;

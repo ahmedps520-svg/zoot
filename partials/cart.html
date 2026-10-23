@@ -24,42 +24,69 @@
 <dialog class="modal checkout" data-checkout aria-labelledby="checkout-title">
   <button class="icon-btn modal-close" type="button" data-checkout-close aria-label="إغلاق" data-en-aria-label="Close"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
   <div class="checkout-step" data-step="form">
-    <p class="kicker">CHECKOUT · DROP 001</p>
-    <h2 id="checkout-title" class="h2" data-en="Almost ZOOOT.">باقي خطوة<br>وتصير زوووط.</h2>
+    <header class="co-head">
+      <p class="kicker">CHECKOUT · DROP 001</p>
+      <h2 id="checkout-title" class="h2" data-en="Almost ZOOOT.">باقي خطوة<br>وتصير زوووط.</h2>
+      <p class="co-secure"><svg aria-hidden="true"><use href="#i-lock"/></svg><span data-en="Secure checkout · your details are sent encrypted">طلب آمن · بياناتك تنتقل مشفّرة</span></p>
+    </header>
+    <ul class="co-trust">
+      <li data-trust-cod><svg aria-hidden="true"><use href="#i-cash"/></svg><span data-en="Pay when it arrives">ادفع لما يوصلك</span></li>
+      <li><svg aria-hidden="true"><use href="#i-truck"/></svg><span data-en="Delivered to your door">توصيل لباب بيتك</span></li>
+      <li><svg aria-hidden="true"><use href="#i-live"/></svg><span data-en="Live order tracking">تتبّع طلبك مباشر</span></li>
+    </ul>
+    <div class="co-review" data-checkout-summary></div>
     <form class="checkout-form" data-checkout-form novalidate>
-      <div class="field">
-        <label for="co-name" data-en="Full name">الاسم الكامل</label>
-        <input id="co-name" name="name" autocomplete="name" required minlength="2">
-      </div>
-      <div class="field">
-        <label for="co-phone" data-en="Mobile">رقم الجوال</label>
-        <input id="co-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="^\+?[0-9\s]{9,15}$" placeholder="05X XXX XXXX" dir="ltr">
-      </div>
-      <div class="field">
-        <label for="co-email" data-en="Email (optional)">البريد (اختياري)</label>
-        <input id="co-email" name="email" type="email" autocomplete="email" dir="ltr">
-      </div>
-      <div class="field-row">
+      <section class="co-sec">
+        <h3 class="co-sec-title"><b>1</b><span data-en="Your details">بياناتك</span></h3>
         <div class="field">
-          <label for="co-city" data-en="City">المدينة</label>
-          <input id="co-city" name="city" autocomplete="address-level2" required>
+          <label for="co-name" data-en="Full name">الاسم الكامل</label>
+          <input id="co-name" name="name" autocomplete="name" required minlength="2">
+          <small class="field-err" data-en="Enter your full name">اكتب اسمك الكامل</small>
         </div>
         <div class="field">
-          <label for="co-district" data-en="District">الحي</label>
-          <input id="co-district" name="district" autocomplete="address-level3">
+          <label for="co-phone" data-en="Mobile">رقم الجوال</label>
+          <input id="co-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="^\+?[0-9\s]{9,15}$" placeholder="05X XXX XXXX" dir="ltr">
+          <small class="field-hint" data-en="Your courier calls this number, and it’s how you track the order.">على هذا الرقم يتواصل معك المندوب، وفيه تتابع طلبك.</small>
+          <small class="field-err" data-en="Enter a valid mobile, e.g. 0551234567">اكتب رقم جوال صحيح، مثل 0551234567</small>
         </div>
-      </div>
-      <div class="field">
-        <label for="co-address" data-en="Address details">العنوان بالتفصيل</label>
-        <textarea id="co-address" name="address" rows="2" required></textarea>
-      </div>
-      <fieldset class="field pay-methods" data-pay-methods>
-        <legend data-en="Payment">طريقة الدفع</legend>
+        <div class="field">
+          <label for="co-email" data-en="Email (optional)">البريد (اختياري)</label>
+          <input id="co-email" name="email" type="email" autocomplete="email" dir="ltr">
+          <small class="field-hint" data-en="For your order confirmation.">عشان يوصلك تأكيد الطلب.</small>
+          <small class="field-err" data-en="Enter a valid email — or leave it empty">اكتب بريد صحيح — أو خلّه فاضي</small>
+        </div>
+      </section>
+      <section class="co-sec">
+        <h3 class="co-sec-title"><b>2</b><span data-en="Where do we deliver?">وين نوصّل طلبك؟</span></h3>
+        <div class="field-row">
+          <div class="field">
+            <label for="co-city" data-en="City">المدينة</label>
+            <input id="co-city" name="city" autocomplete="address-level2" required>
+            <small class="field-err" data-en="Enter your city">اكتب مدينتك</small>
+          </div>
+          <div class="field">
+            <label for="co-district" data-en="District">الحي</label>
+            <input id="co-district" name="district" autocomplete="address-level3">
+          </div>
+        </div>
+        <div class="field">
+          <label for="co-address" data-en="Address details">العنوان بالتفصيل</label>
+          <textarea id="co-address" name="address" rows="2" required placeholder="مثال: شارع التحلية، فيلا 12، بجانب المسجد" data-en-placeholder="e.g. Tahlia St, villa 12, next to the mosque"></textarea>
+          <small class="field-err" data-en="Add your address so the courier can find you">اكتب عنوانك عشان يوصلك المندوب</small>
+        </div>
+      </section>
+      <fieldset class="co-sec pay-methods" data-pay-methods>
+        <legend class="co-sec-title"><b>3</b><span data-en="Payment">طريقة الدفع</span></legend>
         <div class="pay-opts" data-pay-opts></div>
       </fieldset>
-      <div class="checkout-summary" data-checkout-summary></div>
+      <div class="co-totals" data-checkout-totals></div>
       <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
-      <button class="btn btn--block" type="submit" data-magnetic><span data-en="Place order">ثبّت الطلب</span><svg aria-hidden="true"><use href="#i-check"/></svg></button>
+      <button class="btn btn--block co-submit" type="submit">
+        <span class="co-idle"><span data-en="Place order">ثبّت الطلب</span><span class="co-price num" data-co-total></span></span>
+        <span class="co-sending" data-en="Placing your order…">جاري تثبيت طلبك…</span>
+        <svg aria-hidden="true"><use href="#i-check"/></svg>
+      </button>
+      <p class="co-fine"><svg aria-hidden="true"><use href="#i-lock"/></svg><span data-en="We only use your details to deliver this order and contact you about it.">نستخدم بياناتك فقط لتوصيل طلبك والتواصل معك بخصوصه.</span></p>
     </form>
   </div>
 
@@ -87,7 +114,7 @@
       <p data-bank-text dir="auto"></p>
     </div>
     <div class="checkout-done-actions">
-      <a class="btn" data-track-link href="track.html"><svg aria-hidden="true"><use href="#i-arrow"/></svg><span data-en="Track your order">تتبّع طلبك</span></a>
+      <a class="btn" data-track-link href="track.html"><svg aria-hidden="true"><use href="#i-arrow"/></svg><span data-en="Follow it live">تابع طلبك مباشر</span></a>
       <a class="btn btn--whatsapp" data-whatsapp-link href="#" target="_blank" rel="noopener" hidden><svg aria-hidden="true"><use href="#i-whatsapp"/></svg><span data-en="Confirm on WhatsApp">أكّد عبر واتساب</span></a>
       <button class="btn btn--ghost" type="button" data-checkout-close><span data-en="Keep browsing">كمّل تصفّح</span></button>
     </div>

@@ -34,5 +34,13 @@ into Supabase / GitHub / Resend settings pages themselves.
 - Emails are logged as `skipped` until the owner adds the edge-function secrets `RESEND_API_KEY`, `MAIL_FROM`
   (e.g. `ZOOOT <orders@zooot.sa>`), `SITE_URL`, `OWNER_EMAIL` in Supabase (Edge Functions → Secrets) — needs the
   zooot.sa domain verified in Resend first. Never handle those values in chat.
+- Live updates for customers/couriers (who can't read `orders` under RLS): triggers broadcast an empty `changed` ping
+  on public Realtime topics `order:<id>`, `courier:<user id>` and `couriers` (pool) — see
+  `20261023000000_live_tracking.sql`. Clients refetch through `track_order` / `courier_orders`. The storefront loads
+  `@supabase/realtime-js` lazily (`watchTopic` in `src/js/backend/public.js`); the tracking page remembers
+  order number + mobile per device (`src/js/core/orders.js`, "My orders"). There is no customer login yet: a real
+  phone login needs an SMS/WhatsApp OTP provider set up in Supabase Auth by the owner.
+- `place-order` answers right after `create_order` and sends emails/push via `EdgeRuntime.waitUntil`; the checkout
+  warms it up (OPTIONS) when it opens.
 - Supabase grants EXECUTE on new functions to `anon`/`authenticated` by default: revoke it explicitly on internal
   helpers and trigger functions (see the security notes in the migrations).

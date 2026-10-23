@@ -27,6 +27,7 @@
 
     <section class="container track-body">
       <form class="track-form" data-track-form novalidate>
+        <button class="tm-back" type="button" data-show-mine hidden><svg class="tm-back-i" aria-hidden="true"><use href="#i-arrow"/></svg><span data-en="Your saved orders">طلباتك المحفوظة</span></button>
         <div class="field">
           <label for="t-order" data-en="Order number">رقم الطلب</label>
           <input id="t-order" name="order" required placeholder="ZT-1001" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false">
@@ -40,6 +41,19 @@
       </form>
 
       <div class="track-result" data-track-result hidden aria-live="polite"></div>
+
+      <div class="track-mine" data-track-mine hidden>
+        <div class="tm-head">
+          <h2 class="h3" data-en="Your orders">طلباتك</h2>
+          <span class="track-live"><i></i><span data-en="LIVE">مباشر</span></span>
+        </div>
+        <p class="tm-sub" data-en="Saved on this device after your first order or lookup — tap one to follow it live.">محفوظة على هذا الجهاز من أول طلب أو تتبّع — اضغط على أي طلب وتابعه مباشر.</p>
+        <ul class="tm-list" data-mine-list></ul>
+        <div class="tm-actions">
+          <button class="btn btn--ghost" type="button" data-track-other><span data-en="Track another order">تتبّع طلب ثاني</span></button>
+          <button class="tm-forget" type="button" data-forget-all data-en="Not your device? Remove these orders from it">مو جهازك؟ امسح الطلبات من هذا الجهاز</button>
+        </div>
+      </div>
 
       <div class="track-unsub" data-unsub hidden>
         <p class="kicker">NEWSLETTER</p>

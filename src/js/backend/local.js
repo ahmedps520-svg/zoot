@@ -313,6 +313,7 @@ export async function trackOrder(orderNo, phone) {
   const o = db.orders.find((x) => x.order_no.toUpperCase() === String(orderNo || '').trim().toUpperCase());
   if (!o || phoneKey(phone).length < 9 || phoneKey(o.customer_phone) !== phoneKey(phone)) return null;
   return {
+    id: o.id,
     order_no: o.order_no,
     status: o.status,
     payment_status: o.payment_status,

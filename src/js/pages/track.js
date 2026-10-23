@@ -6,6 +6,7 @@ import { formatPrice, getLang, t } from '../core/i18n.js';
 import { CONFIG } from '../data.js';
 import { publicApi } from '../backend/public.js';
 import { FLOW, ORDER_STATUSES } from '../backend/model.js';
+import { forgetAll, forgetOrder, phoneFor, rememberOrder, savedOrders } from '../core/orders.js';
 
 const params = new URLSearchParams(location.search);
 const L = (ar, en) => (getLang() === 'en' ? en : ar);
@@ -25,7 +26,9 @@ const COPY = {
 let current = null; // { no, phone, data }
 let timer = null;
 let stopLive = null;
+let stopListLive = [];
 let map = null; // { el, map, marker, ring } — survives re-renders so the map doesn't flicker
+const cache = new Map(); // order_no → last track_order result, so opening from the list is instant
 
 const clock = (iso) => new Intl.DateTimeFormat(getLang() === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn-ca-gregory', { hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 const ago = (iso) => {
@@ -92,7 +95,7 @@ function render(o) {
           <p class="kicker">${esc(L('رقم الطلب', 'Order N°'))}</p>
           <p class="track-no">${esc(o.order_no)}</p>
         </div>
-        <span class="track-live" title="${esc(L('تتحدّث تلقائيًا', 'Updates automatically'))}"><i></i>LIVE</span>
+        <span class="track-live" title="${esc(L('تتحدّث تلقائيًا', 'Updates automatically'))}"><i></i>${esc(L('مباشر', 'LIVE'))}</span>
       </div>
       <p class="track-status" style="--c:${s.color}"><span>${esc(t(s))}</span></p>
       <p class="lead">${esc(L(...COPY[o.status]))}</p>
@@ -129,13 +132,110 @@ function render(o) {
       </div>
       <div class="track-actions">
         ${CONFIG.whatsapp ? `<a class="btn btn--whatsapp" href="https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(L(`مرحبا زوووط، عندي سؤال عن طلبي ${o.order_no}`, `Hi ZOOOT, a question about my order ${o.order_no}`))}" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-whatsapp"/></svg><span>${esc(L('اسألنا', 'Ask us'))}</span></a>` : ''}
-        <button class="btn btn--ghost" type="button" data-another>${esc(L('تتبّع طلب ثاني', 'Track another order'))}</button>
+        <button class="btn btn--ghost" type="button" data-another>${esc(savedOrders().length > 1 ? L('كل طلباتي', 'All my orders') : L('تتبّع طلب ثاني', 'Track another order'))}</button>
       </div>
-      <p class="track-updated">${esc(L('آخر تحديث', 'Last update'))}: ${esc(when(o.updated_at))}</p>
+      <p class="track-updated">${esc(L('الصفحة تتحدّث لحالها — ما يحتاج تعيد تحميلها.', 'This page updates by itself — no need to refresh.'))} ${esc(L('آخر تغيير', 'Last change'))}: ${esc(when(o.updated_at))}</p>
     </div>`;
-  host.hidden = false;
-  $('[data-track-form]').hidden = true;
+  show('result');
   paintMap(host, o.driver);
+}
+
+/* ------------------------------------------------------------------ views */
+function show(view) {
+  $('[data-track-form]').hidden = view !== 'form';
+  $('[data-track-result]').hidden = view !== 'result';
+  $('[data-track-mine]').hidden = view !== 'mine';
+  if (view !== 'result') {
+    clearTimeout(timer);
+    stopLive?.();
+    stopLive = null;
+    current = null;
+    map = null;
+  }
+  if (view !== 'mine') {
+    stopListLive.forEach((stop) => stop());
+    stopListLive = [];
+  }
+  if (view === 'form') $('[data-show-mine]').hidden = !savedOrders().length;
+}
+
+const day = (iso) => new Intl.DateTimeFormat(getLang() === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'short' }).format(new Date(iso));
+const pieces = (n) => (getLang() === 'en' ? `${n} ${n === 1 ? 'piece' : 'pieces'}` : n === 1 ? 'قطعة وحدة' : n === 2 ? 'قطعتين' : n <= 10 ? `${n} قطع` : `${n} قطعة`);
+
+function cardHTML(s, o) {
+  const st = o && statusOf(o.status);
+  const img = o?.items?.find((i) => i.image)?.image;
+  const n = (o?.items || []).reduce((a, i) => a + (Number(i.qty) || 1), 0);
+  return `<button type="button" class="tm-card" data-open="${esc(s.order_no)}">
+    <span class="tm-thumb">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</span>
+    <span class="tm-info"><b dir="ltr">${esc(s.order_no)}</b><small>${esc(o ? `${day(o.created_at)} · ${pieces(n)}` : L('نحمّل…', 'Loading…'))}</small></span>
+    ${o ? `<span class="tm-status" style="--c:${st.color}">${esc(t(st))}</span><span class="tm-total num">${formatPrice(o.total)}</span>` : '<span class="tm-status is-loading"></span>'}
+    <svg class="tm-go" aria-hidden="true"><use href="#i-arrow"/></svg>
+  </button>`;
+}
+
+/** Orders saved on this device, each kept live. */
+async function showList() {
+  const list = savedOrders();
+  if (!list.length) return showForm();
+  show('mine');
+  if (location.search) history.replaceState(null, '', location.pathname);
+  const ul = $('[data-mine-list]');
+  ul.innerHTML = list.map((s) => `<li data-no="${esc(s.order_no)}">${cardHTML(s, cache.get(s.order_no))}</li>`).join('');
+  const api = await publicApi();
+  const refresh = async (s) => {
+    let o;
+    try {
+      o = await api.trackOrder(s.order_no, s.phone);
+    } catch {
+      return null; // offline: keep what's shown
+    }
+    const li = ul.querySelector(`li[data-no="${CSS.escape(s.order_no)}"]`);
+    if (!o) {
+      forgetOrder(s.order_no); // cancelled & removed by the shop, or a typo saved earlier
+      li?.remove();
+      if (!ul.children.length) showForm();
+      return null;
+    }
+    const before = cache.get(s.order_no);
+    cache.set(s.order_no, o);
+    if (li && $('[data-track-mine]').hidden === false) li.innerHTML = cardHTML(s, o);
+    if (before && before.status !== o.status) toast(L(`${s.order_no}: ${t(statusOf(o.status))}`, `${s.order_no}: ${t(statusOf(o.status))}`));
+    return o;
+  };
+  const found = await Promise.all(list.map(refresh));
+  if ($('[data-track-mine]').hidden) return;
+  stopListLive.forEach((stop) => stop());
+  stopListLive = list
+    .map((s, i) => found[i]?.id && api.watchTopic?.(`order:${found[i].id}`, () => refresh(s)))
+    .filter(Boolean);
+  if (!api.watchTopic) stopListLive.push(api.onChange?.(() => list.forEach(refresh)) || (() => {}));
+}
+
+function showForm({ order = '', focus = true } = {}) {
+  const form = $('[data-track-form]');
+  show('form');
+  form.reset();
+  $('[data-form-msg]', form).textContent = '';
+  form.order.value = order;
+  if (location.search && !order) history.replaceState(null, '', location.pathname);
+  if (focus) (order ? form.phone : form.order).focus({ preventScroll: true });
+}
+
+/** Open one order: instant from the list's copy, then live. */
+function open(no, phone, { push = false } = {}) {
+  const cached = cache.get(no);
+  if (push) history.pushState(null, '', `?order=${encodeURIComponent(no)}`);
+  if (!cached) {
+    showForm({ order: no, focus: false });
+    $('[data-track-form]').phone.value = phone;
+    return lookup(no, phone);
+  }
+  current = { no, phone, data: cached };
+  render(cached);
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  startLive();
+  lookup(no, phone, { quiet: true });
 }
 
 async function lookup(no, phone, { quiet = false } = {}) {
@@ -152,16 +252,26 @@ async function lookup(no, phone, { quiet = false } = {}) {
     const o = await api.trackOrder(no, phone);
     if (!o) {
       if (quiet) return;
+      if (phoneFor(no) === phone) forgetOrder(no); // saved earlier but the shop removed it
+      if (form.hidden) showForm({ order: no });
       msg.textContent = L('ما لقينا طلب بهالرقم والجوال. تأكد منهم وجرّب مرة ثانية.', 'No order matches that number and mobile. Check both and try again.');
       msg.classList.add('is-error');
       return;
     }
+    if (quiet && current?.no !== no) return; // the shopper moved on while this was loading
     const changed = current?.data && current.data.status !== o.status;
+    const first = Boolean(o.id) && current?.data?.id !== o.id;
     current = { no, phone, data: o };
+    cache.set(o.order_no, o);
     msg.textContent = '';
     render(o);
-    if (changed) toast(L(`تحديث: ${t(statusOf(o.status))}`, `Update: ${t(statusOf(o.status))}`));
+    if (changed) {
+      toast(L(`تحديث: ${t(statusOf(o.status))}`, `Update: ${t(statusOf(o.status))}`));
+      if (!reduceMotion) gsap.fromTo('.track-status span', { scale: 0.7 }, { scale: 1, ease: 'back.out(3)', duration: 0.6 });
+    }
+    if (quiet && first) startLive();
     if (!quiet) {
+      rememberOrder(o.order_no, phone, o.created_at);
       history.replaceState(null, '', `?order=${encodeURIComponent(o.order_no)}`);
       if (!reduceMotion) gsap.from('.track-card > *', { y: 24, opacity: 0, stagger: 0.05, duration: 0.6, ease: 'power3.out' });
       startLive();
@@ -169,6 +279,7 @@ async function lookup(no, phone, { quiet = false } = {}) {
   } catch (e) {
     console.error(e);
     if (!quiet) {
+      if (form.hidden) showForm({ order: no });
       msg.textContent = L('صار خطأ بالاتصال — جرّب بعد شوي.', 'Connection problem — try again in a moment.');
       msg.classList.add('is-error');
     }
@@ -177,13 +288,23 @@ async function lookup(no, phone, { quiet = false } = {}) {
   }
 }
 
-/** Live status: instant in demo mode (same browser), polling against Supabase. */
+/**
+ * Live status: the database pings the order's Realtime topic on every change (and when the courier
+ * moves), so the page refetches at once. Demo mode hears the same browser's changes. A slow poll
+ * stays on as a safety net.
+ */
+let pingTimer = null;
 async function startLive() {
   clearTimeout(timer);
   stopLive?.();
   const api = await publicApi();
-  stopLive = api.onChange?.((c) => c.table !== 'subscribers' && current && lookup(current.no, current.phone, { quiet: true }));
-  // Every 15 s while a courier is on the way (live map), otherwise every 30 s.
+  if (!current) return;
+  const refresh = () => {
+    clearTimeout(pingTimer);
+    pingTimer = setTimeout(() => current && lookup(current.no, current.phone, { quiet: true }), 250);
+  };
+  stopLive = api.watchTopic && current.data?.id ? api.watchTopic(`order:${current.data.id}`, refresh) : api.onChange?.((c) => c.table !== 'subscribers' && refresh());
+  // Safety net: every 15 s while a courier is on the way (live map), otherwise every 30 s.
   const tick = () => {
     if (!document.hidden && current) lookup(current.no, current.phone, { quiet: true });
     timer = setTimeout(tick, current?.data?.driver ? 15_000 : 30_000);
@@ -218,15 +339,6 @@ boot({
       unsubscribe(params.get('unsubscribe'));
       return;
     }
-    const no = params.get('order') || params.get('o') || '';
-    let last = null;
-    try {
-      last = JSON.parse(localStorage.getItem('zooot-last-order') || 'null');
-    } catch {
-      /* ignore */
-    }
-    form.order.value = no || last?.order_no || '';
-    if (last?.phone && (!no || last.order_no === no)) form.phone.value = last.phone;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const ok = form.checkValidity();
@@ -248,18 +360,47 @@ boot({
           /* ignore */
         }
       }
-      if (e.target.closest('[data-another]')) {
-        current = null;
-        map = null;
-        clearTimeout(timer);
-        $('[data-track-result]').hidden = true;
-        form.hidden = false;
-        form.reset();
-        form.order.focus();
+      if (e.target.closest('[data-another]')) savedOrders().length > 1 ? showList() : showForm();
+    });
+    $('[data-track-mine]').addEventListener('click', (e) => {
+      const card = e.target.closest('[data-open]');
+      if (card) {
+        const no = card.dataset.open;
+        open(no, phoneFor(no), { push: true });
+      }
+      if (e.target.closest('[data-track-other]')) showForm();
+      if (e.target.closest('[data-forget-all]') && confirm(L('نمسح طلباتك المحفوظة من هذا الجهاز؟ تقدر تتابعها بعدين برقم الطلب والجوال.', 'Remove your saved orders from this device? You can still track them with the order number and mobile.'))) {
+        forgetAll();
+        cache.clear();
+        showForm();
       }
     });
-    window.addEventListener('langchange', () => current?.data && render(current.data));
-    if (form.order.value && form.phone.value) lookup(form.order.value, form.phone.value);
+    $('[data-show-mine]').addEventListener('click', () => showList());
+
+    // The URL decides: ?order=… opens it (no questions if this device knows the mobile), else the saved list.
+    const route = () => {
+      const no = (new URLSearchParams(location.search).get('order') || new URLSearchParams(location.search).get('o') || '').trim();
+      const phone = no && phoneFor(no);
+      if (no && phone) return open(no.toUpperCase(), phone);
+      if (no) return showForm({ order: no.toUpperCase() });
+      if (savedOrders().length) return showList();
+      return showForm({ focus: false });
+    };
+    window.addEventListener('popstate', route);
+    route();
+
+    window.addEventListener('langchange', () => {
+      if (current?.data) render(current.data);
+      else if (!$('[data-track-mine]').hidden) showList();
+    });
+    // Back on the tab (or back online): catch up at once instead of waiting for the next ping.
+    const catchUp = () => {
+      if (document.hidden) return;
+      if (current) lookup(current.no, current.phone, { quiet: true });
+      else if (!$('[data-track-mine]').hidden) showList();
+    };
+    document.addEventListener('visibilitychange', catchUp);
+    window.addEventListener('online', catchUp);
   },
   intro() {
     if (reduceMotion) return;

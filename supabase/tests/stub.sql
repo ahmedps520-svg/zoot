@@ -23,3 +23,9 @@ grant execute on all functions in schema auth to anon, authenticated, service_ro
 grant usage on schema public to anon, authenticated, service_role;
 
 create publication supabase_realtime;
+
+-- Realtime broadcast from the database: realtime.send() just records the message for the tests.
+create schema realtime;
+create table realtime.messages (topic text not null, event text, payload jsonb, private boolean, inserted_at timestamptz not null default now());
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void
+language sql as $$ insert into realtime.messages (topic, event, payload, private) values ($3, $2, $1, $4) $$;
