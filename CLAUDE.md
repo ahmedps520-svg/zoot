@@ -4,7 +4,8 @@ Vite multi-page site, deployed to GitHub Pages by `.github/workflows/deploy.yml`
 **https://zooot.shop** (GoDaddy DNS: A records → GitHub Pages IPs 185.199.108–111.153, `www` CNAME →
 `ahmedps520-svg.github.io`; no GoDaddy parking/forwarding records). Branch deploy: `cname: zooot.shop` in the peaceiris
 step ships the CNAME with every publish; the old `ahmedps520-svg.github.io/zoot/` redirects. Customer-facing links and
-the envelope QR use `SITE_URL` from `src/js/backend/config.js`. Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
+the envelope QR use `SITE_URL` from `src/js/backend/config.js`. HTTPS: Let's Encrypt cert issued 2026-10-24; "Enforce
+HTTPS" is a repo setting (Settings → Pages) only the owner can tick — until then github.io redirects to http://. Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
 
 - Storefront: `*.html` + `src/js/` (checkout, newsletter, live catalogue in `core/store.js`, tracking in `pages/track.js`)
 - Owner dashboard (PWA): `admin/` + `src/admin/`
