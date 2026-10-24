@@ -1,11 +1,10 @@
 # ZOOOT (زوووط) — store, owner dashboard, courier app
 
-Vite multi-page site, deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
-(https://ahmedps520-svg.github.io/zoot/ today). Domain **zooot.shop** (GoDaddy, bought 2026-10-24): customer-facing
-links and the envelope QR already use it (`SITE_URL` in `src/js/backend/config.js`). Switch pending: once its DNS has
-A records → GitHub Pages IPs (185.199.108–111.153) and `www` CNAME → `ahmedps520-svg.github.io`, add
-`cname: zooot.shop` to the peaceiris step in deploy.yml (branch deploy — the CNAME must ship with every publish).
-Don't add it before DNS resolves: github.io would redirect to a domain that doesn't answer. Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
+Vite multi-page site, deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`, served at
+**https://zooot.shop** (GoDaddy DNS: A records → GitHub Pages IPs 185.199.108–111.153, `www` CNAME →
+`ahmedps520-svg.github.io`; no GoDaddy parking/forwarding records). Branch deploy: `cname: zooot.shop` in the peaceiris
+step ships the CNAME with every publish; the old `ahmedps520-svg.github.io/zoot/` redirects. Customer-facing links and
+the envelope QR use `SITE_URL` from `src/js/backend/config.js`. Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
 
 - Storefront: `*.html` + `src/js/` (checkout, newsletter, live catalogue in `core/store.js`, tracking in `pages/track.js`)
 - Owner dashboard (PWA): `admin/` + `src/admin/`

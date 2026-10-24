@@ -1,7 +1,8 @@
 name: Deploy to GitHub Pages
 
 # Every push to main rebuilds the site and publishes dist/ to the gh-pages branch,
-# which GitHub Pages serves at https://<owner>.github.io/<repo>/.
+# which GitHub Pages serves at https://zooot.shop (the CNAME below; the old
+# https://<owner>.github.io/<repo>/ address redirects there).
 on:
   push:
     branches: [main]
@@ -36,4 +37,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          cname: zooot.shop
           commit_message: 'Deploy ${{ github.sha }}'
