@@ -5,6 +5,7 @@ import { applyLang, formatPrice, getLang, setLang, t, ui } from './i18n.js';
 import { publicApi } from '../backend/public.js';
 import { storeSettings, syncCatalog } from './store.js';
 import { rememberOrder } from './orders.js';
+import { clearCoupon, couponDiscount, couponLabel, couponMessage, savedCoupon, saveCoupon } from './coupon.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -108,6 +109,12 @@ function renderCart() {
   });
   if (!linesEl) return;
   $('[data-cart-subtotal]').textContent = formatPrice(cart.subtotal());
+  const saved = savedCoupon();
+  const note = $('[data-drawer-coupon]');
+  if (note) {
+    note.hidden = !saved;
+    if (saved) note.lastElementChild.textContent = getLang() === 'en' ? `${couponLabel(saved)} with ${saved.code} — applied at checkout` : `${couponLabel(saved)} بكود ${saved.code} — يتطبق عند إتمام الطلب`;
+  }
   foot.hidden = count === 0;
   if (!count) {
     linesEl.innerHTML = `<div class="cart-empty"><svg aria-hidden="true"><use href="#zooot-logo"/></svg><p>${esc(ui('emptyBag'))}</p><a class="btn btn--sm" href="shop.html">${esc(getLang() === 'en' ? 'Shop DROP 001' : 'تسوّق DROP 001')}</a></div>`;
@@ -191,6 +198,7 @@ function initCart() {
   $('[data-cart-lines]')?.setAttribute('data-lenis-prevent', '');
   window.addEventListener('cart:change', renderCart);
   window.addEventListener('langchange', renderCart);
+  window.addEventListener('coupon:change', renderCart);
   renderCart();
 }
 
@@ -263,6 +271,7 @@ function checkoutError(err) {
     syncCatalog(true);
     return en ? `Sorry — ${name}${size && size !== 'ONE' ? ` (${size})` : ''} just sold out. Remove it from your bag to continue.` : `للأسف ${name}${size && size !== 'ONE' ? ` (${size})` : ''} نفد للتو — احذفه من السلة وكمّل.`;
   }
+  if (couponMessage(msg)) return couponMessage(msg);
   if (msg === 'invalid_phone') return en ? 'Check your mobile number.' : 'تأكد من رقم الجوال.';
   if (msg === 'invalid_email') return en ? 'Check your email.' : 'تأكد من البريد.';
   if (msg === 'invalid_address') return en ? 'Add your city and address.' : 'اكتب المدينة والعنوان.';
@@ -312,12 +321,88 @@ function initCheckout() {
           </li>`,
         )
         .join('')}</ul>`;
+    // Preview only — the server prices the coupon again when the order is placed.
+    const off = coupon && sub >= coupon.min_subtotal ? couponDiscount(coupon, sub) : 0;
+    if (coupon && !off) {
+      cMsg.textContent = couponMessage(`coupon_min:${coupon.min_subtotal}`);
+      cMsg.classList.add('is-error');
+    } else if (coupon && cMsg.classList.contains('is-error')) {
+      cMsg.textContent = '';
+      cMsg.classList.remove('is-error');
+    }
+    const total = Math.max(0, sub - off + ship);
     $('[data-checkout-totals]', dialog).innerHTML =
       `<div><span>${en() ? 'Subtotal' : 'المجموع الفرعي'}</span><span class="num">${formatPrice(sub)}</span></div>` +
+      (off ? `<div class="co-off"><span>${esc(couponLabel(coupon))} <b dir="ltr">${esc(coupon.code)}</b></span><span class="num">−${formatPrice(off)}</span></div>` : '') +
       `<div><span>${en() ? 'Shipping' : 'الشحن'}</span><span class="num">${ship ? formatPrice(ship) : en() ? 'Free' : 'مجاني'}</span></div>` +
-      `<div class="total"><span>${en() ? 'Total' : 'الإجمالي'}</span><span class="num">${formatPrice(sub + ship)}</span></div>`;
-    $('[data-co-total]', form).textContent = formatPrice(sub + ship);
+      `<div class="total"><span>${en() ? 'Total' : 'الإجمالي'}</span><span class="num">${formatPrice(total)}</span></div>`;
+    $('[data-co-total]', form).textContent = formatPrice(total);
   };
+
+  /* ---- discount code */
+  let coupon = null; // { code, kind, value, min_subtotal } once the server accepted it
+  const cBox = $('[data-coupon]', form);
+  const cInput = $('[data-coupon-input]', cBox);
+  const cMsg = $('[data-coupon-msg]', cBox);
+  const paintCoupon = () => {
+    $('[data-coupon-on]', cBox).hidden = !coupon;
+    $('[data-coupon-toggle]', cBox).hidden = Boolean(coupon);
+    if (coupon) {
+      $('[data-coupon-form]', cBox).hidden = true;
+      $('[data-coupon-code]', cBox).textContent = coupon.code;
+      $('[data-coupon-label]', cBox).textContent = couponLabel(coupon);
+    }
+  };
+  const applyCoupon = async (code, { quiet = false } = {}) => {
+    code = String(code || '').trim().toUpperCase();
+    if (!code) return;
+    const btn = $('[data-coupon-apply]', cBox);
+    btn.classList.add('is-busy');
+    cMsg.classList.remove('is-error');
+    if (!quiet) cMsg.textContent = '';
+    try {
+      const api = await publicApi();
+      const c = await api.checkCoupon({ code, phone: form.phone.value.trim() || null, subtotal: cart.subtotal() });
+      coupon = { code: c.code, kind: c.kind, value: Number(c.value), min_subtotal: Number(c.min_subtotal) || 0 };
+      saveCoupon(coupon);
+      cMsg.textContent = en() ? `Applied — ${couponLabel(coupon)} ✦` : `تم — ${couponLabel(coupon)} ✦`;
+    } catch (err) {
+      coupon = null;
+      if (quiet) clearCoupon(); // a saved code that no longer works (expired, used) just goes away
+      else {
+        cMsg.textContent = couponMessage(err) || (en() ? 'Couldn’t check the code — try again.' : 'ما قدرنا نتحقق من الكود — جرّب مرة ثانية.');
+        cMsg.classList.add('is-error');
+      }
+    } finally {
+      btn.classList.remove('is-busy');
+      paintCoupon();
+      renderSummary();
+    }
+  };
+  cBox.addEventListener('click', (e) => {
+    if (e.target.closest('[data-coupon-toggle]')) {
+      const f = $('[data-coupon-form]', cBox);
+      f.hidden = !f.hidden;
+      e.target.closest('[data-coupon-toggle]').setAttribute('aria-expanded', String(!f.hidden));
+      if (!f.hidden) cInput.focus();
+    }
+    if (e.target.closest('[data-coupon-apply]')) applyCoupon(cInput.value);
+    if (e.target.closest('[data-coupon-remove]')) {
+      coupon = null;
+      clearCoupon();
+      cInput.value = '';
+      cMsg.textContent = '';
+      paintCoupon();
+      renderSummary();
+    }
+  });
+  // Enter in the code box applies the code instead of placing the order.
+  cInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyCoupon(cInput.value);
+    }
+  });
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-checkout-open]')) {
@@ -327,6 +412,13 @@ function initCheckout() {
       stepDone.hidden = true;
       msg.textContent = '';
       renderPay();
+      cMsg.textContent = '';
+      const saved = savedCoupon();
+      if (saved && saved.code !== coupon?.code) {
+        coupon = null;
+        applyCoupon(saved.code, { quiet: true }); // from the envelope page or an earlier visit
+      }
+      paintCoupon();
       renderSummary();
       publicApi().then((api) => api.warmUp?.('place-order'));
       setTimeout(() => {
@@ -339,7 +431,7 @@ function initCheckout() {
     if (flip) flip.setAttribute('aria-pressed', String(flip.getAttribute('aria-pressed') !== 'true'));
   });
   window.addEventListener('catalog:change', () => dialog.open && !stepForm.hidden && (renderPay(), renderSummary()));
-  window.addEventListener('langchange', () => dialog.open && !stepForm.hidden && (renderPay(), renderSummary()));
+  window.addEventListener('langchange', () => dialog.open && !stepForm.hidden && (renderPay(), paintCoupon(), renderSummary()));
   window.addEventListener('cart:change', () => dialog.open && !stepForm.hidden && renderSummary());
   dialog.addEventListener('close', () => lockScroll(false));
   dialog.addEventListener('click', (e) => {
@@ -392,6 +484,7 @@ function initCheckout() {
         district: data.district?.trim() || null,
         address: data.address.trim(),
         payment_method: data.payment_method || payMethods()[0] || 'cod',
+        coupon: coupon?.code || null,
         lang: getLang(),
         items: lines.map(toItem),
       });
@@ -420,6 +513,11 @@ function initCheckout() {
       ? 'Your order is saved on this device — follow it live from “My orders”, no typing needed.'
       : 'طلبك محفوظ على هذا الجهاز — تابعه مباشر من «طلباتي» بدون ما تكتب شي.';
     rememberOrder(order.no, data.phone.trim());
+    if (coupon) {
+      coupon = null; // one use per mobile
+      clearCoupon();
+      paintCoupon();
+    }
     cart.clear();
     form.reset();
     stepForm.hidden = true;

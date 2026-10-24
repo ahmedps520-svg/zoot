@@ -16,6 +16,7 @@ import orders from './views/orders.js';
 import order from './views/order.js';
 import newOrder from './views/new-order.js';
 import payments from './views/payments.js';
+import coupons from './views/coupons.js';
 import products from './views/products.js';
 import customers from './views/customers.js';
 import subscribers from './views/subscribers.js';
@@ -34,6 +35,7 @@ export const store = {
   settings: { public: {}, notifications: {} },
   emails: [],
   couriers: [],
+  coupons: [],
   live: false,
   selfCreated: new Set(),
   installPrompt: null,
@@ -43,6 +45,7 @@ const NAV = [
   { path: '', icon: 'home', ar: 'نظرة عامة', en: 'Overview', view: overview },
   { path: 'orders', icon: 'orders', ar: 'الطلبات', en: 'Orders', view: orders, count: () => store.orders.filter((o) => o.status === 'new').length },
   { path: 'payments', icon: 'pay', ar: 'المدفوعات', en: 'Payments', view: payments },
+  { path: 'coupons', icon: 'tag', ar: 'الكوبونات والخصومات', en: 'Coupons & discounts', view: coupons },
   { path: 'products', icon: 'box', ar: 'المنتجات والمخزون', en: 'Products & stock', view: products, count: () => lowStock().length || '' },
   { path: 'customers', icon: 'users', ar: 'العملاء', en: 'Customers', view: customers },
   { path: 'subscribers', icon: 'heart', ar: 'المشتركين', en: 'Subscribers', view: subscribers },
@@ -60,7 +63,7 @@ export function lowStock() {
 }
 
 /* ------------------------------------------------------------------ data */
-export async function reload(which = ['orders', 'products', 'subscribers', 'settings', 'emails', 'couriers']) {
+export async function reload(which = ['orders', 'products', 'subscribers', 'settings', 'emails', 'couriers', 'coupons']) {
   const api = store.api;
   const jobs = {
     orders: () => api.orders.list(),
@@ -69,6 +72,7 @@ export async function reload(which = ['orders', 'products', 'subscribers', 'sett
     settings: () => api.settings.get(),
     emails: () => api.emails.list(),
     couriers: () => api.couriers?.list() ?? [],
+    coupons: () => api.coupons?.list() ?? [],
   };
   const results = await Promise.allSettled(which.map((k) => jobs[k]()));
   results.forEach((r, i) => {
@@ -240,7 +244,7 @@ function onLive(change) {
                 ? ['emails', 'orders']
                 : ['couriers', 'courier_locations'].includes(change.table)
                   ? ['couriers']
-                  : ['orders', 'products', 'emails'];
+                  : ['orders', 'products', 'emails', 'coupons'];
     await reload(pendingNew.size ? undefined : which);
     for (const [id, rec] of pendingNew) notifyNewOrder(store.orders.find((o) => o.id === id) || rec);
     pendingNew.clear();

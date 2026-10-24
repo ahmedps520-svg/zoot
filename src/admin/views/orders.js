@@ -39,7 +39,7 @@ function syncUrl() {
 
 export function exportCSV(list, name = 'zooot-orders') {
   const rows = [
-    ['order_no', 'created_at', 'status', 'payment_status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'items', 'units', 'subtotal', 'discount', 'shipping', 'total', 'paid', 'balance', 'courier', 'tracking_no', 'customer_note', 'internal_note'],
+    ['order_no', 'created_at', 'status', 'payment_status', 'payment_method', 'source', 'customer_name', 'customer_phone', 'customer_email', 'city', 'district', 'address', 'items', 'units', 'subtotal', 'discount', 'coupon_code', 'shipping', 'total', 'paid', 'balance', 'courier', 'tracking_no', 'customer_note', 'internal_note'],
     ...list.map((o) => [
       o.order_no,
       o.created_at,
@@ -57,6 +57,7 @@ export function exportCSV(list, name = 'zooot-orders') {
       unitsOf(o),
       o.subtotal,
       o.discount,
+      o.coupon_code || '',
       o.shipping,
       o.total,
       o.paid_amount,

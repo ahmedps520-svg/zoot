@@ -144,7 +144,7 @@ function invoiceHTML(o) {
     </tbody></table>
     <table style="margin-top:12pt;width:50%;margin-inline-start:auto">
       <tr><td>${esc(L('المجموع الفرعي', 'Subtotal'))}</td><td>${esc(money(o.subtotal))}</td></tr>
-      ${o.discount ? `<tr><td>${esc(L('الخصم', 'Discount'))}</td><td>-${esc(money(o.discount))}</td></tr>` : ''}
+      ${o.discount ? `<tr><td>${esc(L('الخصم', 'Discount'))}${o.coupon_code ? ` (${esc(o.coupon_code)})` : ''}</td><td>-${esc(money(o.discount))}</td></tr>` : ''}
       <tr><td>${esc(L('الشحن', 'Shipping'))}</td><td>${o.shipping ? esc(money(o.shipping)) : esc(L('مجاني', 'Free'))}</td></tr>
       <tr><td><strong>${esc(L('الإجمالي', 'Total'))}</strong></td><td><strong>${esc(money(o.total))}</strong></td></tr>
       <tr><td>${esc(L('المدفوع', 'Paid'))}</td><td>${esc(money(o.paid_amount))}</td></tr>
@@ -223,7 +223,7 @@ function paint(host, o) {
             .join('')}</div>
           <div class="totals">
             <div class="spread"><span>${esc(L('المجموع الفرعي', 'Subtotal'))}</span><span class="num">${esc(money(o.subtotal))}</span></div>
-            <div class="spread"><label for="disc">${esc(L('الخصم', 'Discount'))}</label><input id="disc" class="in" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(o.discount || 0)}" data-field="discount"></div>
+            <div class="spread"><label for="disc">${esc(L('الخصم', 'Discount'))}${o.coupon_code ? ` <a class="cpn-chip" href="#/coupons" dir="ltr" title="${esc(L('كوبون', 'Coupon'))}">${icon('tag')}${esc(o.coupon_code)}</a>` : ''}</label><input id="disc" class="in" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(o.discount || 0)}" data-field="discount"></div>
             <div class="spread"><label for="ship">${esc(L('الشحن', 'Shipping'))}</label><input id="ship" class="in" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(o.shipping || 0)}" data-field="shipping"></div>
             <div class="spread grand"><span>${esc(L('الإجمالي', 'Total'))}</span><span>${moneyHTML(o.total)}</span></div>
           </div>

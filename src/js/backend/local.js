@@ -6,7 +6,7 @@
  */
 import { CONFIG, PRODUCTS } from '../data.js';
 import { DEMO_COURIERS, DEMO_OWNER } from './config.js';
-import { balanceOf, computeTotals, FLOW, ONE, phoneKey, round2, SIZES } from './model.js';
+import { balanceOf, computeTotals, couponDiscount, FLOW, ONE, phoneKey, round2, SIZES } from './model.js';
 import * as T from '../../../supabase/functions/_shared/email-templates.js';
 
 const KEY = 'zooot-db-v1';
@@ -32,6 +32,7 @@ const blank = () => ({
     notifications: { owner_email: DEMO_OWNER.email, status_emails: true, owner_new_order: true },
   },
   emails: [],
+  coupons: [],
   couriers: [{ id: DEMO_COURIERS[0].id, email: DEMO_COURIERS[0].email, name: 'سالم', phone: '0550000001', active: true, created_at: new Date().toISOString() }],
   locations: {},
 });
@@ -143,6 +144,22 @@ function adjustStock(db, order, sign) {
   }
 }
 
+/* ------------------------------------------------------------------ coupons (mirror of coupon_validate) */
+const couponUses = (db, code) => db.orders.filter((o) => o.coupon_code === code && o.status !== 'cancelled').length;
+const findCoupon = (db, code) => (db.coupons || []).find((c) => c.code === String(code || '').trim().toUpperCase());
+
+function couponValidate(db, c, phone, subtotal) {
+  const t = Date.now();
+  if (!c || !c.active) throw new Error('coupon_invalid');
+  if (c.starts_at && t < Date.parse(c.starts_at)) throw new Error(c.reveal_key ? 'coupon_invalid' : 'coupon_not_started');
+  if (c.ends_at && t >= Date.parse(c.ends_at)) throw new Error('coupon_expired');
+  if (c.max_uses && couponUses(db, c.code) >= c.max_uses) throw new Error('coupon_used_up');
+  if (c.once_per_customer && phoneKey(phone).length >= 9 && db.orders.some((o) => o.coupon_code === c.code && o.status !== 'cancelled' && phoneKey(o.customer_phone) === phoneKey(phone)))
+    throw new Error('coupon_already_used');
+  if (subtotal != null && subtotal < Number(c.min_subtotal || 0)) throw new Error(`coupon_min:${Number(c.min_subtotal).toFixed(2)}`);
+  return subtotal == null ? null : couponDiscount(c, subtotal);
+}
+
 function buildOrder(db, p, { admin = false, actor = null, at = now() } = {}) {
   if (!String(p.customer_name || '').trim()) throw new Error('invalid_name');
   if (!/^\+?[0-9 ]{9,18}$/.test(String(p.customer_phone || ''))) throw new Error('invalid_phone');
@@ -177,6 +194,8 @@ function buildOrder(db, p, { admin = false, actor = null, at = now() } = {}) {
   let shipping = Number(pub.shipping_fee) || 0;
   if (Number(pub.free_shipping_over) > 0 && subtotal >= Number(pub.free_shipping_over)) shipping = 0;
   if (admin && p.shipping !== undefined && p.shipping !== '') shipping = Math.max(0, Number(p.shipping));
+  const coupon = String(p.coupon || '').trim() ? findCoupon(db, p.coupon) || null : undefined;
+  const couponOff = coupon === undefined ? 0 : couponValidate(db, coupon, p.customer_phone, round2(subtotal));
   const paid = admin ? Math.max(0, Number(p.paid_amount) || 0) : 0;
   const order = computeTotals({
     id: uid(),
@@ -194,7 +213,8 @@ function buildOrder(db, p, { admin = false, actor = null, at = now() } = {}) {
     internal_note: admin ? p.internal_note || null : null,
     lang: p.lang === 'en' ? 'en' : 'ar',
     currency: 'SAR',
-    discount: admin ? Math.max(0, Number(p.discount) || 0) : 0,
+    discount: admin && p.discount !== undefined && p.discount !== '' ? Math.max(0, Number(p.discount) || 0) : couponOff,
+    coupon_code: coupon?.code || null,
     shipping,
     courier: null,
     tracking_no: null,
@@ -288,7 +308,37 @@ export async function placeOrder(payload) {
     },
     (o) => ({ table: 'orders', type: 'INSERT', record: strip(o) }),
   );
-  return { id: order.id, order_no: order.order_no, total: order.total, subtotal: order.subtotal, shipping: order.shipping };
+  return { id: order.id, order_no: order.order_no, total: order.total, subtotal: order.subtotal, shipping: order.shipping, discount: order.discount, coupon_code: order.coupon_code };
+}
+
+export async function checkCoupon({ code, phone = null, subtotal = null }) {
+  const db = load();
+  const c = findCoupon(db, code);
+  const discount = couponValidate(db, c, phone, subtotal);
+  return { code: c.code, kind: c.kind, value: c.value, min_subtotal: c.min_subtotal || 0, ends_at: c.ends_at || null, discount };
+}
+
+/** The envelope page: countdown always, the code only once it's open (like coupon_reveal). */
+export async function revealCoupon(key) {
+  const db = load();
+  const c = (db.coupons || []).find((x) => x.reveal_key && x.reveal_key === String(key || '').trim());
+  if (!c) return null;
+  const t = Date.now();
+  const state = !c.active
+    ? 'off'
+    : c.ends_at && t >= Date.parse(c.ends_at)
+      ? 'ended'
+      : c.starts_at && t < Date.parse(c.starts_at)
+        ? 'waiting'
+        : c.max_uses && couponUses(db, c.code) >= c.max_uses
+          ? 'used_up'
+          : 'open';
+  const open = state === 'open';
+  return {
+    now: now(), starts_at: c.starts_at || null, ends_at: c.ends_at || null, state,
+    code: open ? c.code : null, kind: open ? c.kind : null, value: open ? c.value : null,
+    min_subtotal: open ? c.min_subtotal || 0 : null, once_per_customer: c.once_per_customer,
+  };
 }
 
 export async function subscribe({ email, lang = 'ar', source = 'footer' }) {
@@ -697,6 +747,12 @@ export const demo = {
     const methods = ['cod', 'cod', 'transfer', 'mada', 'applepay', 'stcpay'];
     tx((db) => {
       const catalog = products(db).filter((p) => p.type !== 'custom');
+      // Coupons: the Ramadan envelope page (key demoRamadan) and an everyday code.
+      if (!db.coupons?.length)
+        db.coupons = [
+          { id: uid(), code: 'RAMADAN-DEMO', label: 'ظروف رمضان (تجريبي)', kind: 'percent', value: 30, min_subtotal: 0, starts_at: '2027-02-07T21:00:00.000Z', ends_at: '2027-03-08T21:00:00.000Z', max_uses: null, once_per_customer: true, active: true, reveal_key: 'demoRamadan', created_at: now() },
+          { id: uid(), code: 'WELCOME10', label: 'ترحيب', kind: 'percent', value: 10, min_subtotal: 0, starts_at: null, ends_at: null, max_uses: null, once_per_customer: true, active: true, reveal_key: null, created_at: now() },
+        ];
       // Stock so the inventory screens have something to show.
       for (const p of catalog) {
         const sizes = p.sizes.length ? p.sizes : [ONE];
@@ -809,6 +865,69 @@ export const demo = {
   import(data) {
     if (!data || data.version !== 1) throw new Error('bad_file');
     save({ ...blank(), ...data }, { table: '*', type: 'SYNC' });
+  },
+};
+
+/* ================================================================== coupons (owner) */
+const COUPON_FIELDS = ['code', 'label', 'kind', 'value', 'min_subtotal', 'starts_at', 'ends_at', 'max_uses', 'once_per_customer', 'active', 'reveal_key'];
+
+function couponFields(input, base = {}) {
+  const c = { ...base };
+  for (const k of COUPON_FIELDS) if (k in input) c[k] = input[k] === '' ? null : input[k];
+  c.code = String(c.code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9-]{3,24}$/.test(c.code)) throw new Error('invalid_code');
+  c.kind = c.kind === 'fixed' ? 'fixed' : 'percent';
+  c.value = Number(c.value);
+  if (!(c.value > 0) || (c.kind === 'percent' && c.value > 100)) throw new Error('invalid_value');
+  c.min_subtotal = Math.max(0, Number(c.min_subtotal) || 0);
+  c.max_uses = c.max_uses ? Math.max(1, Math.round(Number(c.max_uses))) : null;
+  if (c.starts_at && c.ends_at && Date.parse(c.ends_at) <= Date.parse(c.starts_at)) throw new Error('invalid_dates');
+  c.once_per_customer = c.once_per_customer !== false;
+  c.active = c.active !== false;
+  return c;
+}
+
+export const coupons = {
+  async list() {
+    const db = load();
+    return clone(
+      (db.coupons || []).map((c) => {
+        const used = db.orders.filter((o) => o.coupon_code === c.code && o.status !== 'cancelled');
+        return { ...c, uses: used.length, discount_total: round2(used.reduce((s, o) => s + o.discount, 0)), revenue: round2(used.reduce((s, o) => s + o.total, 0)) };
+      }),
+    );
+  },
+  async create(input) {
+    return tx(
+      (db) => {
+        const c = couponFields(input, { id: uid(), once_per_customer: true, active: true, created_at: now() });
+        if (db.coupons.some((x) => x.code === c.code)) throw new Error('duplicate_code');
+        db.coupons.unshift(c);
+        return clone(c);
+      },
+      { table: 'coupons', type: 'INSERT' },
+    );
+  },
+  async save(id, patch) {
+    return tx(
+      (db) => {
+        const i = db.coupons.findIndex((x) => x.id === id);
+        if (i < 0) throw new Error('not_found');
+        const c = couponFields(patch, db.coupons[i]);
+        if (db.coupons.some((x) => x.code === c.code && x.id !== id)) throw new Error('duplicate_code');
+        db.coupons[i] = { ...c, updated_at: now() };
+        return clone(db.coupons[i]);
+      },
+      { table: 'coupons', type: 'UPDATE' },
+    );
+  },
+  async remove(id) {
+    tx(
+      (db) => {
+        db.coupons = db.coupons.filter((x) => x.id !== id);
+      },
+      { table: 'coupons', type: 'DELETE' },
+    );
   },
 };
 

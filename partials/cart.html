@@ -16,6 +16,7 @@
         <strong data-cart-subtotal>0</strong>
       </div>
       <p class="drawer-fine" data-en="Shipping is calculated at checkout.">الشحن يُحسب عند إتمام الطلب.</p>
+      <p class="drawer-coupon" data-drawer-coupon hidden><svg aria-hidden="true"><use href="#i-tag"/></svg><span></span></p>
       <button class="btn btn--block" type="button" data-checkout-open data-magnetic><span data-en="Checkout">أكمل الطلب</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
     </footer>
   </aside>
@@ -79,6 +80,20 @@
         <legend class="co-sec-title"><b>3</b><span data-en="Payment">طريقة الدفع</span></legend>
         <div class="pay-opts" data-pay-opts></div>
       </fieldset>
+      <div class="co-coupon" data-coupon>
+        <button class="co-coupon-toggle" type="button" data-coupon-toggle aria-expanded="false"><svg aria-hidden="true"><use href="#i-tag"/></svg><span data-en="Have a discount code?">عندك كود خصم؟</span></button>
+        <div class="co-coupon-form" data-coupon-form hidden>
+          <label class="sr-only" for="co-coupon" data-en="Discount code">كود الخصم</label>
+          <input id="co-coupon" data-coupon-input dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="اكتب الكود" data-en-placeholder="Enter code" maxlength="24">
+          <button class="btn btn--sm" type="button" data-coupon-apply><span data-en="Apply">طبّق</span></button>
+        </div>
+        <div class="co-coupon-on" data-coupon-on hidden>
+          <svg aria-hidden="true"><use href="#i-tag"/></svg>
+          <span><b dir="ltr" data-coupon-code></b> <small data-coupon-label></small></span>
+          <button class="co-coupon-x" type="button" data-coupon-remove aria-label="إزالة الكود" data-en-aria-label="Remove code"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+        </div>
+        <p class="co-coupon-msg" data-coupon-msg role="status" aria-live="polite"></p>
+      </div>
       <div class="co-totals" data-checkout-totals></div>
       <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
       <button class="btn btn--block co-submit" type="submit">

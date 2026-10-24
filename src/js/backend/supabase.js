@@ -67,6 +67,18 @@ export async function trackOrder(orderNo, phone) {
   return data;
 }
 
+export async function checkCoupon({ code, phone = null, subtotal = null }) {
+  const { data, error } = await sb.rpc('check_coupon', { p_code: code, p_phone: phone, p_subtotal: subtotal });
+  fail(error);
+  return data;
+}
+
+export async function revealCoupon(key) {
+  const { data, error } = await sb.rpc('coupon_reveal', { p_key: key });
+  fail(error);
+  return data;
+}
+
 export async function unsubscribe(token) {
   const { data, error } = await sb.rpc('unsubscribe', { p_token: token });
   fail(error);
@@ -288,6 +300,36 @@ export const emails = {
     const data = await invoke('admin-email', { action, ...params });
     if (!data) throw new Error('function_missing');
     return data;
+  },
+};
+
+/** Coupons & discounts — always priced on the server by create_order (coupons migration). */
+const COUPON_FIELDS = ['code', 'label', 'kind', 'value', 'min_subtotal', 'starts_at', 'ends_at', 'max_uses', 'once_per_customer', 'active', 'reveal_key'];
+const couponRow = (c) => Object.fromEntries(Object.entries(c).filter(([k]) => COUPON_FIELDS.includes(k)));
+const couponFail = (error) => fail(error?.code === '23505' ? { message: 'duplicate_code' } : error);
+
+export const coupons = {
+  async list() {
+    const [{ data, error }, { data: stats }] = await Promise.all([sb.from('coupons').select('*').order('created_at', { ascending: false }), sb.rpc('coupon_stats')]);
+    fail(error);
+    return data.map((c) => {
+      const s = (stats || []).find((x) => x.code === c.code);
+      return { ...c, uses: s?.uses || 0, discount_total: Number(s?.discount) || 0, revenue: Number(s?.revenue) || 0 };
+    });
+  },
+  async create(c) {
+    const { data, error } = await sb.from('coupons').insert(couponRow(c)).select().single();
+    couponFail(error);
+    return data;
+  },
+  async save(id, patch) {
+    const { data, error } = await sb.from('coupons').update(couponRow(patch)).eq('id', id).select().single();
+    couponFail(error);
+    return data;
+  },
+  async remove(id) {
+    const { error } = await sb.from('coupons').delete().eq('id', id);
+    fail(error);
   },
 };
 

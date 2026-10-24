@@ -42,5 +42,12 @@ into Supabase / GitHub / Resend settings pages themselves.
   phone login needs an SMS/WhatsApp OTP provider set up in Supabase Auth by the owner.
 - `place-order` answers right after `create_order` and sends emails/push via `EdgeRuntime.waitUntil`; the checkout
   warms it up (OPTIONS) when it opens.
+- Coupons (`20261024000000_coupons.sql`): `coupons` table (owner-only under RLS), priced only on the server
+  (`coupon_validate` inside `create_order`, row locked for `max_uses`), previewed with `check_coupon`, managed in the
+  dashboard (`#/coupons`). A coupon with `reveal_key` backs the Ramadan envelope page `ramadan.html?k=<key>`:
+  `coupon_reveal` gives the countdown and only reveals the code at `starts_at` (server clock); before that a secret
+  code answers `coupon_invalid` everywhere. The live Ramadan coupon/key exist only in the database — never commit real
+  codes or keys (the repo is public). The print card (`src/admin/envelope-card.js`, 4×6 in + 3 mm bleed) is made from
+  the dashboard (PNG download / print-to-PDF).
 - Supabase grants EXECUTE on new functions to `anon`/`authenticated` by default: revoke it explicitly on internal
   helpers and trigger functions (see the security notes in the migrations).

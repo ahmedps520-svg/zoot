@@ -1800,3 +1800,91 @@ label.b {
     padding-inline: 6px;
   }
 }
+
+/* ------------------------------------------------------------------ coupons */
+.cpn-code {
+  font-family: var(--f-latin-black, 'Archivo Black', sans-serif);
+  letter-spacing: 0.03em;
+  padding-inline: 8px;
+}
+.cpn-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.cpn-label .i {
+  width: 14px;
+  height: 14px;
+}
+.cpn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fde7f1;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.cpn-chip .i {
+  width: 13px;
+  height: 13px;
+}
+.env {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.env-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.env-info {
+  display: grid;
+  gap: 12px;
+}
+.env-info h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.env-when,
+.env-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 700;
+}
+.env-code b {
+  font-family: var(--f-latin-black, 'Archivo Black', sans-serif);
+  letter-spacing: 0.03em;
+}
+.env-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.env-fine {
+  margin: 0;
+  font-size: 12.5px;
+}
+@media (max-width: 720px) {
+  .env {
+    grid-template-columns: 1fr;
+  }
+  .env-card {
+    width: min(240px, 70%);
+    margin-inline: auto;
+  }
+}

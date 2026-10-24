@@ -4,6 +4,7 @@ import { mount } from './common.js';
 
 const LINKS = [
   { href: '#/payments', icon: 'pay', ar: 'المدفوعات', en: 'Payments' },
+  { href: '#/coupons', icon: 'tag', ar: 'الكوبونات والخصومات', en: 'Coupons & discounts' },
   { href: '#/customers', icon: 'users', ar: 'العملاء', en: 'Customers' },
   { href: '#/subscribers', icon: 'heart', ar: 'المشتركين', en: 'Subscribers' },
   { href: '#/emails', icon: 'mail', ar: 'الإيميلات', en: 'Emails' },

@@ -77,6 +77,8 @@ const remote = {
   placeOrder: async (payload) => (await fn('place-order', payload)) || rpc('create_order', { p: payload }),
   subscribe: async ({ email, lang = 'ar', source = 'footer' }) => (await fn('subscribe', { email, lang, source })) || rpc('subscribe', { p_email: email, p_lang: lang, p_source: source }),
   trackOrder: (orderNo, phone) => rpc('track_order', { p_order_no: orderNo, p_phone: phone }),
+  checkCoupon: ({ code, phone = null, subtotal = null }) => rpc('check_coupon', { p_code: code, p_phone: phone, p_subtotal: subtotal }),
+  revealCoupon: (key) => rpc('coupon_reveal', { p_key: key }),
   unsubscribe: (token) => rpc('unsubscribe', { p_token: token }),
   onChange: () => () => {},
   watchTopic,

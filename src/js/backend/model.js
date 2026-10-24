@@ -65,6 +65,10 @@ export function computeTotals(order) {
 export const balanceOf = (o) => round2(Math.max(0, (o.total || 0) - (o.paid_amount || 0)));
 
 /** Normalise a Saudi/international phone to its last 9 digits for matching. */
+/** What a coupon takes off the items subtotal — same formula as coupon_validate in SQL. */
+export const couponDiscount = (c, subtotal) =>
+  !c ? 0 : c.kind === 'percent' ? round2((Number(subtotal) * Number(c.value)) / 100) : round2(Math.min(Number(c.value), Number(subtotal)));
+
 export const phoneKey = (p) => String(p || '').replace(/\D/g, '').slice(-9);
 
 /** wa.me needs international digits; assume Saudi (966) for local 05… numbers. */

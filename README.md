@@ -18,6 +18,7 @@ Brand design by **Shatha & Sarah Alghamdi** · Website developed by **Mamar**.
 | `product.html?id=…` | Follows the magazine's e-store concept (p.62): starts from the **back**, then look → statement → size. Hover zoom on the print, live recoloured preview for any hoodie colour, sirwal anatomy hotspots, "how to wear it", fit guide, sticky mobile buy bar. |
 | `studio.html` | **ZOOOT Studio** configurator: hoodie colour × statement × souq fabric × «زوووط» colourway, rendered live (2,300+ combinations), zoom views, randomiser, shareable URLs, add the custom set to the bag. |
 | `story.html` | The brand system as an editorial: signature rules, logo variants, colourways, click-to-copy colour system, souq fabrics, anatomy, hoodie & print spec, print methods, founders' signature collection. |
+| `ramadan.html` | **Ramadan envelope page** (opened from the QR in the envelopes, `?k=` secret key): live countdown to 1 Ramadan, then reveals the discount code and saves it so checkout applies it automatically. |
 | `track.html` | **Order tracking** for customers: order number + the mobile used at checkout → live status timeline, courier and tracking number, items. Orders placed or tracked on a device are remembered there ("My orders"), so refreshing never asks again; the page updates by itself within a second or two. Also handles newsletter unsubscribe links. |
 | `admin/` | **ZOOOT HQ**, the owners' dashboard (installable app). See below. |
 | `courier/` | **ZOOOT Delivery**, the couriers' app (installable). See below. |
