@@ -133,7 +133,7 @@ Live accounts: owner `admindemo@zooot.sa`, courier `courier1demo@zooot.sa` (the 
    1. Create an account at [resend.com](https://resend.com) and **verify your domain**. Until it's verified, Resend only delivers to your own address.
    2. Then, with the [Supabase CLI](https://supabase.com/docs/guides/cli):
       ```bash
-      supabase secrets set RESEND_API_KEY=re_… MAIL_FROM="ZOOOT <orders@your-domain>" SITE_URL=https://ahmedps520-svg.github.io/zoot OWNER_EMAIL=you@example.com
+      supabase secrets set RESEND_API_KEY=re_… MAIL_FROM="ZOOOT <orders@your-domain>" SITE_URL=https://zooot.shop OWNER_EMAIL=you@example.com
       supabase functions deploy place-order subscribe admin-email
       ```
    3. Check **Dashboard → Settings → Connections**: it should show Resend as connected.

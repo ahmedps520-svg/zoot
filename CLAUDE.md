@@ -1,7 +1,11 @@
 # ZOOOT (زوووط) — store, owner dashboard, courier app
 
 Vite multi-page site, deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
-(https://ahmedps520-svg.github.io/zoot/). Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
+(https://ahmedps520-svg.github.io/zoot/ today). Domain **zooot.shop** (GoDaddy, bought 2026-10-24): customer-facing
+links and the envelope QR already use it (`SITE_URL` in `src/js/backend/config.js`). Switch pending: once its DNS has
+A records → GitHub Pages IPs (185.199.108–111.153) and `www` CNAME → `ahmedps520-svg.github.io`, add
+`cname: zooot.shop` to the peaceiris step in deploy.yml (branch deploy — the CNAME must ship with every publish).
+Don't add it before DNS resolves: github.io would redirect to a domain that doesn't answer. Arabic-first (RTL) with English via `data-en` / `L(ar, en)`.
 
 - Storefront: `*.html` + `src/js/` (checkout, newsletter, live catalogue in `core/store.js`, tracking in `pages/track.js`)
 - Owner dashboard (PWA): `admin/` + `src/admin/`
@@ -32,8 +36,9 @@ into Supabase / GitHub / Resend settings pages themselves.
   owner/courier accounts (Supabase → Authentication → Users → Add user, then `public.admins` /
   `public.admin_add_courier`).
 - Emails are logged as `skipped` until the owner adds the edge-function secrets `RESEND_API_KEY`, `MAIL_FROM`
-  (e.g. `ZOOOT <orders@zooot.sa>`), `SITE_URL`, `OWNER_EMAIL` in Supabase (Edge Functions → Secrets) — needs the
-  zooot.sa domain verified in Resend first. Never handle those values in chat.
+  (e.g. `ZOOOT <orders@zooot.shop>`), `SITE_URL` (`https://zooot.shop`), `OWNER_EMAIL` in Supabase (Edge Functions →
+  Secrets) — needs zooot.shop verified in Resend first. Never handle those values in chat. The deployed functions
+  still default SITE_URL to the old github.io address until the secret is set (or they're redeployed from the repo).
 - Live updates for customers/couriers (who can't read `orders` under RLS): triggers broadcast an empty `changed` ping
   on public Realtime topics `order:<id>`, `courier:<user id>` and `couriers` (pool) — see
   `20261023000000_live_tracking.sql`. Clients refetch through `track_order` / `courier_orders`. The storefront loads
