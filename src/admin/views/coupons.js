@@ -3,11 +3,11 @@ import ruqaaFont from '@fontsource/aref-ruqaa/files/aref-ruqaa-arabic-700-normal
 import archivoFont from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 import { reload, render, store } from '../main.js';
 import { L, confirmDialog, copy, date, dialog, esc, icon, money, num } from '../ui.js';
-import { busy, empty, mount, siteRoot, statTile } from './common.js';
+import { busy, empty, mount, publicRoot, siteRoot, statTile } from './common.js';
 import { envelopeCardPage, envelopeCardPNG, envelopeCardSVG } from '../envelope-card.js';
 
 const DAY = 86_400_000;
-const revealUrl = (c) => `${siteRoot()}ramadan.html?k=${encodeURIComponent(c.reveal_key)}`;
+const revealUrl = (c) => `${publicRoot()}ramadan.html?k=${encodeURIComponent(c.reveal_key)}`;
 const valueText = (c) => (c.kind === 'percent' ? `${num(c.value)}%` : money(c.value));
 // <input type="datetime-local"> works in the owner's local time
 const localInput = (iso) => (iso ? new Date(Date.parse(iso) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');

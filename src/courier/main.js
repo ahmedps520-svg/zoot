@@ -16,6 +16,7 @@ import '../styles/admin.css';
 import '../styles/courier.css';
 
 import { courierBackend, MODE } from '../js/backend/courier.js';
+import { SITE_URL } from '../js/backend/config.js';
 import { waNumber } from '../js/backend/model.js';
 import { bad, chime, errorText, esc, icon, L, lang, money, ok, setLang, toast, tr } from '../admin/ui.js';
 
@@ -23,7 +24,8 @@ const state = { api: null, me: null, orders: [], tab: null, busy: new Set(), loa
 const root = () => document.getElementById('root');
 
 /* ------------------------------------------------------------------ helpers */
-const siteRoot = () => new URL('../', location.href.split('#')[0]).href;
+// Customers get the shop's domain (this app's own address in demo mode).
+const siteRoot = () => (MODE === 'supabase' ? `${SITE_URL}/` : new URL('../', location.href.split('#')[0]).href);
 const trackUrl = (o) => `${siteRoot()}track.html?order=${encodeURIComponent(o.order_no)}`;
 const firstName = (n) => String(n || '').trim().split(/\s+/)[0] || '';
 const time = (iso) => (iso ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn-ca-gregory', { hour: 'numeric', minute: '2-digit' }).format(new Date(iso)) : '');
@@ -34,8 +36,8 @@ function customerMessage(o) {
   const me = state.me?.name || L('مندوب زوووط', 'the ZOOOT courier');
   const hi = firstName(o.customer_name);
   return o.lang === 'en'
-    ? `Hello ${hi}, my name is ${me} from zooot.sa 👋\nYour order ${o.order_no} is on its way 🚚 Track it here: ${trackUrl(o)}\n\nPlease send your national address or your location, along with your villa/apartment/building number.\nPlease keep your phone available. Thank you!`
-    : `مرحبًا ${hi}، معك ${me} من zooot.sa 👋\nطلبك رقم ${o.order_no} في الطريق إليك 🚚 تقدر تتابعه من هنا: ${trackUrl(o)}\n\nفضلًا أرسل عنوانك الوطني أو موقعك، مع رقم الفيلا/الشقة/المبنى.\nوخلّ جوالك متاح. شكرًا!`;
+    ? `Hello ${hi}, my name is ${me} from zooot.shop 👋\nYour order ${o.order_no} is on its way 🚚 Track it here: ${trackUrl(o)}\n\nPlease send your national address or your location, along with your villa/apartment/building number.\nPlease keep your phone available. Thank you!`
+    : `مرحبًا ${hi}، معك ${me} من zooot.shop 👋\nطلبك رقم ${o.order_no} في الطريق إليك 🚚 تقدر تتابعه من هنا: ${trackUrl(o)}\n\nفضلًا أرسل عنوانك الوطني أو موقعك، مع رقم الفيلا/الشقة/المبنى.\nوخلّ جوالك متاح. شكرًا!`;
 }
 const waLink = (o) => `https://wa.me/${waNumber(o.customer_phone)}?text=${encodeURIComponent(customerMessage(o))}`;
 const smsLink = (o) => `sms:${o.customer_phone.replace(/\s/g, '')}?&body=${encodeURIComponent(customerMessage(o))}`;

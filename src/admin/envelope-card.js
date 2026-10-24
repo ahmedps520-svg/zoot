@@ -59,7 +59,7 @@ function burst(cx, cy, rOut, rIn, spikes, rand) {
  * @param {{ url: string, base: string, line?: string, word?: string, ticker?: string, handle?: string[] }} o
  *   url  — what the QR opens; base — site root for images (ends with /).
  */
-export function envelopeCardSVG({ url, base, line = 'امسحه أول يوم', word = 'رمضان', ticker = 'SCAN ON RAMADAN 1ST', handle = ['ZOOOT.SA', '— RAMADAN 1448'], images = {}, fontCss = '' }) {
+export function envelopeCardSVG({ url, base, line = 'امسحه أول يوم', word = 'رمضان', ticker = 'SCAN ON RAMADAN 1ST', handle = ['ZOOOT.SHOP', '— RAMADAN 1448'], images = {}, fontCss = '' }) {
   const rand = rng(1448);
   const img = (p) => images[p] || `${base}${p}`;
   // poster (inside the black frame)

@@ -11,7 +11,7 @@ export const corsHeaders = {
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-export const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://ahmedps520-svg.github.io/zoot').replace(/\/$/, '');
+export const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://zooot.shop').replace(/\/$/, '');
 
 /** Service-role client: bypasses RLS — only ever used server-side. */
 export function serviceClient(): SupabaseClient {

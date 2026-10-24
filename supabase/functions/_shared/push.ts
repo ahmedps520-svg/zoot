@@ -9,7 +9,7 @@ export async function notifyOwners(db: SupabaseClient, payload: { title: string;
   const pub = Deno.env.get('VAPID_PUBLIC_KEY');
   const priv = Deno.env.get('VAPID_PRIVATE_KEY');
   if (!pub || !priv) return { sent: 0, skipped: true };
-  webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:owner@zooot.sa', pub, priv);
+  webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:owner@zooot.shop', pub, priv);
   const { data } = await db.from('push_subscriptions').select('endpoint, keys');
   let sent = 0;
   await Promise.allSettled(

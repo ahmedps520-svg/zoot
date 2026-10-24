@@ -18,6 +18,8 @@ const LIVE = {
 export const SUPABASE_URL = (env.VITE_SUPABASE_URL || LIVE.url).replace(/\/$/, '');
 export const SUPABASE_KEY = env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || LIVE.key;
 export const VAPID_PUBLIC_KEY = env.VITE_VAPID_PUBLIC_KEY || '';
+/** The shop's public address — used in every link customers get (tracking, QR codes). */
+export const SITE_URL = (env.VITE_SITE_URL || 'https://zooot.shop').replace(/\/$/, '');
 export const MODE = env.VITE_DEMO === '1' || !SUPABASE_URL || !SUPABASE_KEY ? 'demo' : 'supabase';
 
 /**

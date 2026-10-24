@@ -1,5 +1,6 @@
 /** Helpers shared by the dashboard views. */
 import { balanceOf, phoneKey, waNumber } from '../../js/backend/model.js';
+import { SITE_URL } from '../../js/backend/config.js';
 import { reload, render, store } from '../main.js';
 import { esc, icon, img, L, ok, bad, tr, optText } from '../ui.js';
 
@@ -119,9 +120,11 @@ export const customerOrders = (phone) => store.orders.filter((o) => phoneKey(o.c
 export { balanceOf };
 
 /* ------------------------------------------------------------------ links */
-/** The storefront root, e.g. https://…/zoot/ (works on GitHub Pages sub-paths and in dev). */
+/** Where this dashboard is served from (for loading the store's images), e.g. https://zooot.shop/. */
 export const siteRoot = () => new URL('../', location.href.split('#')[0]).href;
-export const trackUrl = (o) => `${siteRoot()}track.html?order=${encodeURIComponent(o.order_no)}`;
+/** The address customers get in links and QR codes: the shop's domain when live, this site in demo mode. */
+export const publicRoot = () => (store.mode === 'supabase' ? `${SITE_URL}/` : siteRoot());
+export const trackUrl = (o) => `${publicRoot()}track.html?order=${encodeURIComponent(o.order_no)}`;
 export const waHref = (phone, text = '') => `https://wa.me/${waNumber(phone)}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 
 export function waText(o, kind = 'status') {

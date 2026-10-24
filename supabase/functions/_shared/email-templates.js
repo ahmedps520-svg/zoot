@@ -175,7 +175,7 @@ const addressBlock = (order, lang, font) => {
 };
 
 /** @param {Record<string, any>} [o] */
-const ctx = (o = {}) => ({ siteUrl: (o.siteUrl || 'https://ahmedps520-svg.github.io/zoot').replace(/\/$/, ''), socials: o.socials || {} });
+const ctx = (o = {}) => ({ siteUrl: (o.siteUrl || 'https://zooot.shop').replace(/\/$/, ''), socials: o.socials || {} });
 const trackLink = (siteUrl, order) => `${siteUrl}/track.html?order=${encodeURIComponent(order.order_no)}`;
 
 /* ------------------------------------------------------------------ templates */
