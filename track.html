@@ -31,13 +31,12 @@
   })();
 </script>
 
-  <script type="module" crossorigin src="./assets/track-D4aBD2_R.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/config-BHSY_Bxq.js">
+  <script type="module" crossorigin src="./assets/track-D-pD4vig.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/model-Bs53oIbX.js">
   <link rel="modulepreload" crossorigin href="./assets/data-DzIjeNT0.js">
-  <link rel="modulepreload" crossorigin href="./assets/main-Bpj74a-F.js">
-  <link rel="modulepreload" crossorigin href="./assets/model-BmbOLay9.js">
-  <link rel="stylesheet" crossorigin href="./assets/config-CpcRajZ3.css">
-  <link rel="stylesheet" crossorigin href="./assets/main-B4BAQGT-.css">
+  <link rel="modulepreload" crossorigin href="./assets/main-j8OtBkLr.js">
+  <link rel="stylesheet" crossorigin href="./assets/model-CpcRajZ3.css">
+  <link rel="stylesheet" crossorigin href="./assets/main-Cdcv7rm8.css">
   <link rel="stylesheet" crossorigin href="./assets/track-BE2HuF7A.css">
 </head>
 <body data-page="track" data-title-en="Track your order — ZOOOT">
@@ -64,6 +63,7 @@
   <symbol id="i-truck" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.5v2.5h-7z"/><circle cx="6.5" cy="17" r="1.8" fill="var(--paper, #fff)" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="17" r="1.8" fill="var(--paper, #fff)" stroke="currentColor" stroke-width="1.8"/></symbol>
   <symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></symbol>
   <symbol id="i-bank" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M3 9.5 12 4l9 5.5zM5.5 10.5v6.5M10 10.5v6.5M14 10.5v6.5M18.5 10.5v6.5M3 20h18"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1a1 1 0 0 1 .7.3l7.2 7.2a1 1 0 0 1 0 1.4l-8.1 8.1a1 1 0 0 1-1.4 0l-7.2-7.2a1 1 0 0 1-.3-.7Z"/><circle cx="8.3" cy="8.3" r="1.6" fill="currentColor"/></symbol>
 </svg>
 
   <div class="loader" data-loader aria-hidden="true">
@@ -257,6 +257,7 @@
         <strong data-cart-subtotal>0</strong>
       </div>
       <p class="drawer-fine" data-en="Shipping is calculated at checkout.">الشحن يُحسب عند إتمام الطلب.</p>
+      <p class="drawer-coupon" data-drawer-coupon hidden><svg aria-hidden="true"><use href="#i-tag"/></svg><span></span></p>
       <button class="btn btn--block" type="button" data-checkout-open data-magnetic><span data-en="Checkout">أكمل الطلب</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
     </footer>
   </aside>
@@ -320,6 +321,20 @@
         <legend class="co-sec-title"><b>3</b><span data-en="Payment">طريقة الدفع</span></legend>
         <div class="pay-opts" data-pay-opts></div>
       </fieldset>
+      <div class="co-coupon" data-coupon>
+        <button class="co-coupon-toggle" type="button" data-coupon-toggle aria-expanded="false"><svg aria-hidden="true"><use href="#i-tag"/></svg><span data-en="Have a discount code?">عندك كود خصم؟</span></button>
+        <div class="co-coupon-form" data-coupon-form hidden>
+          <label class="sr-only" for="co-coupon" data-en="Discount code">كود الخصم</label>
+          <input id="co-coupon" data-coupon-input dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="اكتب الكود" data-en-placeholder="Enter code" maxlength="24">
+          <button class="btn btn--sm" type="button" data-coupon-apply><span data-en="Apply">طبّق</span></button>
+        </div>
+        <div class="co-coupon-on" data-coupon-on hidden>
+          <svg aria-hidden="true"><use href="#i-tag"/></svg>
+          <span><b dir="ltr" data-coupon-code></b> <small data-coupon-label></small></span>
+          <button class="co-coupon-x" type="button" data-coupon-remove aria-label="إزالة الكود" data-en-aria-label="Remove code"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+        </div>
+        <p class="co-coupon-msg" data-coupon-msg role="status" aria-live="polite"></p>
+      </div>
       <div class="co-totals" data-checkout-totals></div>
       <p class="form-msg" data-form-msg role="status" aria-live="polite"></p>
       <button class="btn btn--block co-submit" type="submit">
